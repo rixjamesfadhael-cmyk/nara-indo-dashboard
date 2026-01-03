@@ -4,7 +4,8 @@ import {
   onSnapshot,
   deleteDoc,
   doc,
-  updateDoc
+  updateDoc,
+  addDoc
 } from 'firebase/firestore'
 import { db } from '../firebase'
 
@@ -18,6 +19,14 @@ const rupiah = n =>
 export default function Proyek({ role }) {
   const [projects, setProjects] = useState([])
   const [editing, setEditing] = useState(null)
+  const [adding, setAdding] = useState(false)
+
+  const [form, setForm] = useState({
+    name: '',
+    budget: '',
+    progress: 0,
+    status: 'Aktif'
+  })
 
   useEffect(() => {
     const ref = collection(db, 'projects')
@@ -33,7 +42,7 @@ export default function Proyek({ role }) {
     await deleteDoc(doc(db, 'projects', id))
   }
 
-  const simpan = async () => {
+  const simpanEdit = async () => {
     const { id, name, budget, progress, status } = editing
     await updateDoc(doc(db, 'projects', id), {
       name,
@@ -44,8 +53,38 @@ export default function Proyek({ role }) {
     setEditing(null)
   }
 
+  const simpanTambah = async () => {
+    if (!form.name) return alert('Nama proyek wajib diisi')
+
+    await addDoc(collection(db, 'projects'), {
+      name: form.name,
+      budget: Number(form.budget),
+      progress: Number(form.progress),
+      status: form.status
+    })
+
+    setForm({
+      name: '',
+      budget: '',
+      progress: 0,
+      status: 'Aktif'
+    })
+    setAdding(false)
+  }
+
   return (
     <>
+      {/* ===== HEADER + TAMBAH ===== */}
+      <div style={header}>
+        <h2>Daftar Proyek</h2>
+
+        {role === 'admin' && (
+          <button style={addBtn} onClick={() => setAdding(true)}>
+            + Tambah Proyek
+          </button>
+        )}
+      </div>
+
       <div style={wrap}>
         {projects.map(p => (
           <div key={p.id} style={card}>
@@ -106,10 +145,7 @@ export default function Proyek({ role }) {
             <input
               value={editing.name}
               onChange={e =>
-                setEditing({
-                  ...editing,
-                  name: e.target.value
-                })
+                setEditing({ ...editing, name: e.target.value })
               }
             />
 
@@ -155,7 +191,68 @@ export default function Proyek({ role }) {
               <button onClick={() => setEditing(null)}>
                 Batal
               </button>
-              <button style={save} onClick={simpan}>
+              <button style={save} onClick={simpanEdit}>
+                Simpan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== MODAL TAMBAH ===== */}
+      {adding && (
+        <div style={overlay}>
+          <div style={modal}>
+            <h3>Tambah Proyek</h3>
+
+            <label>Nama Proyek</label>
+            <input
+              value={form.name}
+              onChange={e =>
+                setForm({ ...form, name: e.target.value })
+              }
+            />
+
+            <label>Nilai Kontrak</label>
+            <input
+              type="number"
+              value={form.budget}
+              onChange={e =>
+                setForm({ ...form, budget: e.target.value })
+              }
+            />
+
+            <label>Progress (%)</label>
+            <input
+              type="number"
+              value={form.progress}
+              onChange={e =>
+                setForm({
+                  ...form,
+                  progress: e.target.value
+                })
+              }
+            />
+
+            <label>Status</label>
+            <select
+              value={form.status}
+              onChange={e =>
+                setForm({
+                  ...form,
+                  status: e.target.value
+                })
+              }
+            >
+              <option>Aktif</option>
+              <option>Selesai</option>
+            </select>
+
+            <div style={modalActions}>
+              <button onClick={() => setAdding(false)}>
+                Batal
+              </button>
+              <button style={save} onClick={simpanTambah}>
                 Simpan
               </button>
             </div>
@@ -167,6 +264,23 @@ export default function Proyek({ role }) {
 }
 
 /* ===== STYLE ===== */
+
+const header = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: 20
+}
+
+const addBtn = {
+  background: '#2563eb',
+  color: '#fff',
+  border: 'none',
+  padding: '8px 14px',
+  borderRadius: 8,
+  cursor: 'pointer',
+  fontWeight: 700
+}
 
 const wrap = {
   display: 'grid',
