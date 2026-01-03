@@ -1,274 +1,292 @@
 import { useEffect, useState } from 'react'
-import { collection, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore'
+import {
+  collection,
+  onSnapshot,
+  deleteDoc,
+  doc,
+  updateDoc
+} from 'firebase/firestore'
 import { db } from '../firebase'
-import * as XLSX from 'xlsx'
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
 
-export default function Proyek() {
+const rupiah = n =>
+  new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0
+  }).format(n || 0)
+
+export default function Proyek({ role }) {
   const [projects, setProjects] = useState([])
   const [editing, setEditing] = useState(null)
-  const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('SEMUA')
 
   useEffect(() => {
     const ref = collection(db, 'projects')
-    const unsub = onSnapshot(ref, snap => {
-      setProjects(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    return onSnapshot(ref, snap => {
+      setProjects(
+        snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      )
     })
-    return () => unsub()
   }, [])
 
-  /* ================= CRUD ================= */
+  const hapus = async id => {
+    if (!confirm('Hapus proyek ini?')) return
+    await deleteDoc(doc(db, 'projects', id))
+  }
 
   const simpan = async () => {
-    await updateDoc(doc(db, 'projects', editing.id), {
-      name: editing.name,
-      client: editing.client,
-      status: editing.status,
-      progress: Number(editing.progress)
+    const { id, name, budget, progress, status } = editing
+    await updateDoc(doc(db, 'projects', id), {
+      name,
+      budget: Number(budget),
+      progress: Number(progress),
+      status
     })
     setEditing(null)
   }
 
-  const hapus = async (id) => {
-    if (!confirm('Hapus proyek?')) return
-    await deleteDoc(doc(db, 'projects', id))
-  }
-
-  /* ================= FILTER ================= */
-
-  const filtered = projects.filter(p => {
-    const textMatch =
-      p.name?.toLowerCase().includes(search.toLowerCase()) ||
-      p.client?.toLowerCase().includes(search.toLowerCase())
-
-    const statusMatch =
-      statusFilter === 'SEMUA' || p.status === statusFilter
-
-    return textMatch && statusMatch
-  })
-
-  /* ================= EXPORT EXCEL ================= */
-
-  const exportExcel = () => {
-    const data = filtered.map(p => ({
-      'Nama Proyek': p.name,
-      'Klien': p.client,
-      'Status': p.status,
-      'Progress (%)': p.progress || 0
-    }))
-
-    const worksheet = XLSX.utils.json_to_sheet(data)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Proyek')
-
-    XLSX.writeFile(workbook, 'data-proyek.xlsx')
-  }
-
-  /* ================= EXPORT PDF ================= */
-
-  const exportPDF = () => {
-    const doc = new jsPDF()
-
-    doc.setFontSize(14)
-    doc.text('Laporan Proyek', 14, 15)
-
-    doc.setFontSize(10)
-    doc.text(
-      `Filter: ${statusFilter} | Pencarian: ${search || '-'}`,
-      14,
-      22
-    )
-
-    autoTable(doc, {
-      startY: 28,
-      head: [['Nama Proyek', 'Klien', 'Status', 'Progress (%)']],
-      body: filtered.map(p => [
-        p.name,
-        p.client,
-        p.status,
-        `${p.progress || 0}%`
-      ])
-    })
-
-    doc.save('laporan-proyek.pdf')
-  }
-
   return (
-    <div>
-      {/* TOOLBAR */}
-      <div style={toolbar}>
-        <input
-          placeholder="Cari proyek / klien..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          style={input}
-        />
-
-        <select
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
-          style={input}
-        >
-          <option value="SEMUA">Semua Status</option>
-          <option value="Aktif">Aktif</option>
-          <option value="Selesai">Selesai</option>
-        </select>
-
-        <button onClick={exportExcel} style={excelBtn}>
-          Export Excel
-        </button>
-
-        <button onClick={exportPDF} style={pdfBtn}>
-          Export PDF
-        </button>
-      </div>
-
-      {/* LIST */}
-      <div style={grid}>
-        {filtered.map(p => (
+    <>
+      <div style={wrap}>
+        {projects.map(p => (
           <div key={p.id} style={card}>
+            <div style={head}>
+              <h3 style={title}>{p.name}</h3>
+              <span style={badge(p.status)}>
+                {p.status || 'Aktif'}
+              </span>
+            </div>
+
             <div style={row}>
-              <strong>{p.name}</strong>
               <div>
-                <button onClick={() => setEditing(p)}>Edit</button>{' '}
-                <button style={{ color: 'red' }} onClick={() => hapus(p.id)}>
-                  Hapus
-                </button>
+                <small>Nilai Kontrak</small>
+                <strong>{rupiah(p.budget)}</strong>
+              </div>
+              <div>
+                <small>Progress</small>
+                <strong>{p.progress || 0}%</strong>
               </div>
             </div>
 
-            <p>Klien: {p.client}</p>
-            <p>Status: {p.status}</p>
-
-            <div style={progressBar}>
-              <div style={{ ...progressFill, width: `${p.progress || 0}%` }} />
+            <div style={progressWrap}>
+              <div
+                style={{
+                  ...progressBar,
+                  width: `${p.progress || 0}%`
+                }}
+              />
             </div>
-            <small>{p.progress || 0}%</small>
+
+            {role === 'admin' && (
+              <div style={actions}>
+                <button
+                  style={edit}
+                  onClick={() => setEditing(p)}
+                >
+                  Edit
+                </button>
+                <button
+                  style={hapusBtn}
+                  onClick={() => hapus(p.id)}
+                >
+                  Hapus
+                </button>
+              </div>
+            )}
           </div>
         ))}
       </div>
 
-      {/* MODAL EDIT */}
+      {/* ===== MODAL EDIT ===== */}
       {editing && (
         <div style={overlay}>
           <div style={modal}>
             <h3>Edit Proyek</h3>
 
+            <label>Nama Proyek</label>
             <input
               value={editing.name}
-              onChange={e => setEditing({ ...editing, name: e.target.value })}
-            />
-            <input
-              value={editing.client}
-              onChange={e => setEditing({ ...editing, client: e.target.value })}
-            />
-            <select
-              value={editing.status}
-              onChange={e => setEditing({ ...editing, status: e.target.value })}
-            >
-              <option value="Aktif">Aktif</option>
-              <option value="Selesai">Selesai</option>
-            </select>
-            <input
-              type="number"
-              min="0"
-              max="100"
-              value={editing.progress || 0}
-              onChange={e => setEditing({ ...editing, progress: e.target.value })}
+              onChange={e =>
+                setEditing({
+                  ...editing,
+                  name: e.target.value
+                })
+              }
             />
 
-            <div>
-              <button onClick={simpan}>Simpan</button>{' '}
-              <button onClick={() => setEditing(null)}>Batal</button>
+            <label>Nilai Kontrak</label>
+            <input
+              type="number"
+              value={editing.budget}
+              onChange={e =>
+                setEditing({
+                  ...editing,
+                  budget: e.target.value
+                })
+              }
+            />
+
+            <label>Progress (%)</label>
+            <input
+              type="number"
+              value={editing.progress}
+              onChange={e =>
+                setEditing({
+                  ...editing,
+                  progress: e.target.value
+                })
+              }
+            />
+
+            <label>Status</label>
+            <select
+              value={editing.status}
+              onChange={e =>
+                setEditing({
+                  ...editing,
+                  status: e.target.value
+                })
+              }
+            >
+              <option>Aktif</option>
+              <option>Selesai</option>
+            </select>
+
+            <div style={modalActions}>
+              <button onClick={() => setEditing(null)}>
+                Batal
+              </button>
+              <button style={save} onClick={simpan}>
+                Simpan
+              </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
 
-/* ================= STYLE ================= */
+/* ===== STYLE ===== */
 
-const toolbar = {
-  display: 'flex',
-  gap: 12,
-  marginBottom: 16,
-  flexWrap: 'wrap'
-}
-
-const input = {
-  padding: 8,
-  borderRadius: 6,
-  border: '1px solid #e5e7eb',
-  fontSize: 14
-}
-
-const excelBtn = {
-  padding: '8px 12px',
-  background: '#16a34a',
-  color: '#fff',
-  border: 'none',
-  borderRadius: 6,
-  cursor: 'pointer'
-}
-
-const pdfBtn = {
-  padding: '8px 12px',
-  background: '#dc2626',
-  color: '#fff',
-  border: 'none',
-  borderRadius: 6,
-  cursor: 'pointer'
-}
-
-const grid = {
+const wrap = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-  gap: 16
+  gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+  gap: 20
 }
 
 const card = {
   background: '#fff',
-  border: '1px solid #e5e7eb',
-  borderRadius: 10,
-  padding: 16
+  borderRadius: 16,
+  padding: 20,
+  boxShadow: '0 10px 25px rgba(0,0,0,0.05)',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 12
 }
+
+const head = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center'
+}
+
+const title = {
+  margin: 0,
+  fontSize: 18,
+  fontWeight: 700
+}
+
+const badge = status => ({
+  padding: '4px 10px',
+  borderRadius: 999,
+  fontSize: 12,
+  fontWeight: 700,
+  color: '#fff',
+  background:
+    status === 'Selesai' ? '#16a34a' : '#2563eb'
+})
 
 const row = {
   display: 'flex',
   justifyContent: 'space-between',
-  marginBottom: 8
+  color: '#475569',
+  fontSize: 14
 }
 
-const progressBar = {
+const progressWrap = {
   height: 8,
   background: '#e5e7eb',
-  borderRadius: 6,
+  borderRadius: 999,
   overflow: 'hidden'
 }
 
-const progressFill = {
+const progressBar = {
   height: '100%',
-  background: '#2563eb'
+  background: '#2563eb',
+  transition: 'width 0.3s ease'
 }
+
+const actions = {
+  display: 'flex',
+  gap: 8,
+  marginTop: 8
+}
+
+const edit = {
+  flex: 1,
+  padding: 8,
+  borderRadius: 8,
+  border: '1px solid #c7d2fe',
+  background: '#eef2ff',
+  cursor: 'pointer',
+  fontWeight: 600
+}
+
+const hapusBtn = {
+  flex: 1,
+  padding: 8,
+  borderRadius: 8,
+  border: '1px solid #fecaca',
+  background: '#fee2e2',
+  cursor: 'pointer',
+  fontWeight: 600,
+  color: '#b91c1c'
+}
+
+/* ===== MODAL ===== */
 
 const overlay = {
   position: 'fixed',
   inset: 0,
-  background: 'rgba(0,0,0,0.3)',
+  background: 'rgba(0,0,0,0.4)',
   display: 'flex',
+  alignItems: 'center',
   justifyContent: 'center',
-  alignItems: 'center'
+  zIndex: 1000
 }
 
 const modal = {
   background: '#fff',
   padding: 20,
-  borderRadius: 10,
-  width: 300,
-  display: 'grid',
+  borderRadius: 16,
+  width: 320,
+  display: 'flex',
+  flexDirection: 'column',
   gap: 8
+}
+
+const modalActions = {
+  display: 'flex',
+  justifyContent: 'flex-end',
+  gap: 8,
+  marginTop: 12
+}
+
+const save = {
+  background: '#2563eb',
+  color: '#fff',
+  border: 'none',
+  padding: '6px 12px',
+  borderRadius: 6,
+  cursor: 'pointer'
 }
