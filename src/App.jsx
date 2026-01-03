@@ -1,54 +1,73 @@
-import { useState, useEffect } from "react";
-import { signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
-import { auth } from "./firebase";
+import { useEffect, useState } from 'react'
+import { onAuthStateChanged, signOut } from 'firebase/auth'
+import { doc, getDoc } from 'firebase/firestore'
+import { auth, db } from './firebase'
+import Login from './Login'
+
+import Layout from './components/Layout'
+import Sidebar from './components/Sidebar'
+import Header from './components/Header'
+
+import Dashboard from './pages/Dashboard'
+import Proyek from './pages/Proyek'
+import Histori from './pages/Histori'
 
 export default function App() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLogin, setIsLogin] = useState(false);
-
-  const login = async () => {
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (err) {
-      alert("Email atau password salah");
-    }
-  };
+  const [user, setUser] = useState(null)
+  const [role, setRole] = useState('viewer')
+  const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState('dashboard')
+  const [theme, setTheme] = useState('light')
 
   useEffect(() => {
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setIsLogin(true);
+    const unsub = onAuthStateChanged(auth, async currentUser => {
+      if (currentUser) {
+        setUser(currentUser)
+
+        const ref = doc(db, 'users', currentUser.uid)
+        const snap = await getDoc(ref)
+
+        if (snap.exists()) {
+          setRole(snap.data().role || 'viewer')
+        } else {
+          setRole('viewer')
+        }
       } else {
-        setIsLogin(false);
+        setUser(null)
       }
-    });
-  }, []);
 
-  if (!isLogin) {
-    return (
-      <div style={{ padding: 40 }}>
-        <h2>Login</h2>
+      setLoading(false)
+    })
 
-        <input
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+    return () => unsub()
+  }, [])
+
+  if (loading) return <p>Loading...</p>
+  if (!user) return <Login />
+
+  return (
+    <Layout
+      theme={theme}
+      sidebar={
+        <Sidebar
+          page={page}
+          setPage={setPage}
+          onLogout={() => signOut(auth)}
         />
-        <br /><br />
-
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+      }
+      header={
+        <Header
+          title={`Aplikasi Manajemen Proyek (${role.toUpperCase()})`}
+          theme={theme}
+          toggleTheme={() =>
+            setTheme(t => (t === 'light' ? 'dark' : 'light'))
+          }
         />
-        <br /><br />
-
-        <button onClick={login}>Login</button>
-      </div>
-    );
-  }
-
-  return <h1>Aplikasi siap dijalankan</h1>;
+      }
+    >
+      {page === 'dashboard' && <Dashboard />}
+      {page === 'projects' && <Proyek role={role} />}
+      {page === 'history' && <Histori />}
+    </Layout>
+  )
 }
