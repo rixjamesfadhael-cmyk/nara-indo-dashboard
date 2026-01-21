@@ -37,7 +37,12 @@ export default function Dashboard() {
   useEffect(() => {
     const ref = collection(db, 'projects')
     return onSnapshot(ref, snap => {
-      setProjects(snap.docs.map(d => d.data()))
+      setProjects(
+        snap.docs.map(d => ({
+          id: d.id,
+          ...d.data()
+        }))
+      )
     })
   }, [])
 
@@ -53,8 +58,10 @@ export default function Dashboard() {
     aktif.length === 0
       ? 0
       : (
-          aktif.reduce((a, b) => a + (Number(b.progress) || 0), 0) /
-          aktif.length
+          aktif.reduce(
+            (a, b) => a + (Number(b.progress) || 0),
+            0
+          ) / aktif.length
         ).toFixed(1)
 
   /* ===== CHART DATA ===== */
@@ -69,15 +76,21 @@ export default function Dashboard() {
     ]
   }
 
+  const limitedAktif = aktif.slice(0, 10)
+
   const lineData = {
-    labels: aktif.map((p, i) => p.name || `Proyek ${i + 1}`),
+    labels: limitedAktif.map(
+      (p, i) => p.name || `Proyek ${i + 1}`
+    ),
     datasets: [
       {
         label: 'Progress (%)',
-        data: aktif.map(p => p.progress || 0),
+        data: limitedAktif.map(p => p.progress || 0),
         borderColor: '#2563eb',
         backgroundColor: 'rgba(37,99,235,0.2)',
-        tension: 0.4
+        tension: 0.4,
+        fill: true,
+        pointRadius: 4
       }
     ]
   }
@@ -96,12 +109,20 @@ export default function Dashboard() {
       <div style={chartWrap}>
         <div style={chartCard}>
           <h3 style={chartTitle}>Komposisi Proyek</h3>
-          <Pie data={pieData} />
+          {projects.length === 0 ? (
+            <Empty />
+          ) : (
+            <Pie data={pieData} />
+          )}
         </div>
 
         <div style={chartCard}>
           <h3 style={chartTitle}>Progress Proyek Aktif</h3>
-          <Line data={lineData} />
+          {aktif.length === 0 ? (
+            <Empty />
+          ) : (
+            <Line data={lineData} />
+          )}
         </div>
       </div>
     </div>
@@ -113,6 +134,21 @@ function Card({ title, value }) {
     <div style={card}>
       <div style={cardTitle}>{title}</div>
       <div style={cardValue}>{value}</div>
+    </div>
+  )
+}
+
+function Empty() {
+  return (
+    <div
+      style={{
+        padding: 40,
+        textAlign: 'center',
+        color: '#64748b',
+        fontSize: 14
+      }}
+    >
+      Belum ada data
     </div>
   )
 }
