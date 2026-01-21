@@ -8,6 +8,9 @@ import {
   addDoc
 } from 'firebase/firestore'
 import { db } from '../firebase'
+import * as XLSX from 'xlsx'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 const rupiah = n =>
   new Intl.NumberFormat('id-ID', {
@@ -28,6 +31,7 @@ export default function Proyek({ role }) {
     status: 'Aktif'
   })
 
+  /* ===== FETCH DATA ===== */
   useEffect(() => {
     const ref = collection(db, 'projects')
     return onSnapshot(ref, snap => {
@@ -36,6 +40,8 @@ export default function Proyek({ role }) {
       )
     })
   }, [])
+
+  /* ===== CRUD ===== */
 
   const hapus = async id => {
     if (!confirm('Hapus proyek ini?')) return
@@ -72,19 +78,68 @@ export default function Proyek({ role }) {
     setAdding(false)
   }
 
+  /* ===== EXPORT DATA (SATU SUMBER) ===== */
+
+  const exportRows = projects.map((p, i) => ({
+    No: i + 1,
+    Nama: p.name,
+    Nilai: p.budget,
+    Progress: `${p.progress || 0}%`,
+    Status: p.status || 'Aktif'
+  }))
+
+  const exportExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(exportRows)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Proyek')
+    XLSX.writeFile(wb, 'daftar-proyek.xlsx')
+  }
+
+  const exportPDF = () => {
+    const pdf = new jsPDF()
+    pdf.setFontSize(14)
+    pdf.text('Daftar Proyek', 14, 15)
+
+    autoTable(pdf, {
+      startY: 22,
+      head: [['No', 'Nama Proyek', 'Nilai Kontrak', 'Progress', 'Status']],
+      body: exportRows.map(r => [
+        r.No,
+        r.Nama,
+        rupiah(r.Nilai),
+        r.Progress,
+        r.Status
+      ]),
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [37, 99, 235] }
+    })
+
+    pdf.save('daftar-proyek.pdf')
+  }
+
   return (
     <>
-      {/* ===== HEADER + TAMBAH ===== */}
+      {/* ===== HEADER ===== */}
       <div style={header}>
         <h2>Daftar Proyek</h2>
 
-        {role === 'admin' && (
-          <button style={addBtn} onClick={() => setAdding(true)}>
-            + Tambah Proyek
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button style={exportBtn} onClick={exportExcel}>
+            Export Excel
           </button>
-        )}
+          <button style={exportPdfBtn} onClick={exportPDF}>
+            Export PDF
+          </button>
+
+          {role === 'admin' && (
+            <button style={addBtn} onClick={() => setAdding(true)}>
+              + Tambah Proyek
+            </button>
+          )}
+        </div>
       </div>
 
+      {/* ===== LIST PROYEK ===== */}
       <div style={wrap}>
         {projects.map(p => (
           <div key={p.id} style={card}>
@@ -117,16 +172,10 @@ export default function Proyek({ role }) {
 
             {role === 'admin' && (
               <div style={actions}>
-                <button
-                  style={edit}
-                  onClick={() => setEditing(p)}
-                >
+                <button style={edit} onClick={() => setEditing(p)}>
                   Edit
                 </button>
-                <button
-                  style={hapusBtn}
-                  onClick={() => hapus(p.id)}
-                >
+                <button style={hapusBtn} onClick={() => hapus(p.id)}>
                   Hapus
                 </button>
               </div>
@@ -154,10 +203,7 @@ export default function Proyek({ role }) {
               type="number"
               value={editing.budget}
               onChange={e =>
-                setEditing({
-                  ...editing,
-                  budget: e.target.value
-                })
+                setEditing({ ...editing, budget: e.target.value })
               }
             />
 
@@ -166,10 +212,7 @@ export default function Proyek({ role }) {
               type="number"
               value={editing.progress}
               onChange={e =>
-                setEditing({
-                  ...editing,
-                  progress: e.target.value
-                })
+                setEditing({ ...editing, progress: e.target.value })
               }
             />
 
@@ -177,10 +220,7 @@ export default function Proyek({ role }) {
             <select
               value={editing.status}
               onChange={e =>
-                setEditing({
-                  ...editing,
-                  status: e.target.value
-                })
+                setEditing({ ...editing, status: e.target.value })
               }
             >
               <option>Aktif</option>
@@ -188,9 +228,7 @@ export default function Proyek({ role }) {
             </select>
 
             <div style={modalActions}>
-              <button onClick={() => setEditing(null)}>
-                Batal
-              </button>
+              <button onClick={() => setEditing(null)}>Batal</button>
               <button style={save} onClick={simpanEdit}>
                 Simpan
               </button>
@@ -227,10 +265,7 @@ export default function Proyek({ role }) {
               type="number"
               value={form.progress}
               onChange={e =>
-                setForm({
-                  ...form,
-                  progress: e.target.value
-                })
+                setForm({ ...form, progress: e.target.value })
               }
             />
 
@@ -238,10 +273,7 @@ export default function Proyek({ role }) {
             <select
               value={form.status}
               onChange={e =>
-                setForm({
-                  ...form,
-                  status: e.target.value
-                })
+                setForm({ ...form, status: e.target.value })
               }
             >
               <option>Aktif</option>
@@ -249,9 +281,7 @@ export default function Proyek({ role }) {
             </select>
 
             <div style={modalActions}>
-              <button onClick={() => setAdding(false)}>
-                Batal
-              </button>
+              <button onClick={() => setAdding(false)}>Batal</button>
               <button style={save} onClick={simpanTambah}>
                 Simpan
               </button>
@@ -274,6 +304,26 @@ const header = {
 
 const addBtn = {
   background: '#2563eb',
+  color: '#fff',
+  border: 'none',
+  padding: '8px 14px',
+  borderRadius: 8,
+  cursor: 'pointer',
+  fontWeight: 700
+}
+
+const exportBtn = {
+  background: '#16a34a',
+  color: '#fff',
+  border: 'none',
+  padding: '8px 14px',
+  borderRadius: 8,
+  cursor: 'pointer',
+  fontWeight: 700
+}
+
+const exportPdfBtn = {
+  background: '#dc2626',
   color: '#fff',
   border: 'none',
   padding: '8px 14px',
@@ -366,8 +416,6 @@ const hapusBtn = {
   fontWeight: 600,
   color: '#b91c1c'
 }
-
-/* ===== MODAL ===== */
 
 const overlay = {
   position: 'fixed',
