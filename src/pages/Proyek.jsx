@@ -5,7 +5,8 @@ import {
   deleteDoc,
   doc,
   updateDoc,
-  addDoc
+  addDoc,
+  serverTimestamp
 } from 'firebase/firestore'
 import { db } from '../firebase'
 import * as XLSX from 'xlsx'
@@ -34,17 +35,24 @@ export default function Proyek({ role }) {
     status: 'Aktif'
   })
 
-  /* ===== FETCH DATA ===== */
+  /* ===== FETCH PROJECTS ===== */
   useEffect(() => {
-    const ref = collection(db, 'projects')
-    return onSnapshot(ref, snap => {
-      setProjects(
-        snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      )
+    return onSnapshot(collection(db, 'projects'), snap => {
+      setProjects(snap.docs.map(d => ({ id: d.id, ...d.data() })))
     })
   }, [])
 
-  /* ===== FILTERED DATA ===== */
+  /* ===== HISTORI LOGGER (KOMPATIBEL DENGAN Histori.jsx) ===== */
+  const logActivity = async (action, projectName, description) => {
+    await addDoc(collection(db, 'activity_logs'), {
+      action,            // CREATE | UPDATE | DELETE
+      projectName,
+      description,
+      createdAt: serverTimestamp()
+    })
+  }
+
+  /* ===== FILTER ===== */
   const filteredProjects = projects.filter(p => {
     const matchName = p.name
       ?.toLowerCase()
@@ -61,18 +69,24 @@ export default function Proyek({ role }) {
   /* ===== CRUD ===== */
 
   const hapus = async id => {
+    const p = projects.find(x => x.id === id)
     if (!confirm('Hapus proyek ini?')) return
+
     await deleteDoc(doc(db, 'projects', id))
+    await logActivity('DELETE', p?.name || '-', 'Proyek dihapus')
   }
 
   const simpanEdit = async () => {
     const { id, name, budget, progress, status } = editing
+
     await updateDoc(doc(db, 'projects', id), {
       name,
       budget: Number(budget),
       progress: Number(progress),
       status
     })
+
+    await logActivity('UPDATE', name, 'Proyek diperbarui')
     setEditing(null)
   }
 
@@ -86,6 +100,12 @@ export default function Proyek({ role }) {
       status: form.status
     })
 
+    await logActivity(
+      'CREATE',
+      form.name,
+      'Proyek ditambahkan'
+    )
+
     setForm({
       name: '',
       budget: '',
@@ -95,7 +115,7 @@ export default function Proyek({ role }) {
     setAdding(false)
   }
 
-  /* ===== EXPORT DATA (DARI FILTERED) ===== */
+  /* ===== EXPORT ===== */
 
   const exportRows = filteredProjects.map((p, i) => ({
     No: i + 1,
@@ -126,9 +146,7 @@ export default function Proyek({ role }) {
         rupiah(r.Nilai),
         r.Progress,
         r.Status
-      ]),
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [37, 99, 235] }
+      ])
     })
 
     pdf.save('daftar-proyek.pdf')
@@ -136,7 +154,7 @@ export default function Proyek({ role }) {
 
   return (
     <>
-      {/* ===== HEADER ===== */}
+      {/* HEADER */}
       <div style={header}>
         <h2>Daftar Proyek</h2>
 
@@ -158,12 +176,8 @@ export default function Proyek({ role }) {
             <option value="Selesai">Selesai</option>
           </select>
 
-          <button style={exportBtn} onClick={exportExcel}>
-            Excel
-          </button>
-          <button style={exportPdfBtn} onClick={exportPDF}>
-            PDF
-          </button>
+          <button style={exportBtn} onClick={exportExcel}>Excel</button>
+          <button style={exportPdfBtn} onClick={exportPDF}>PDF</button>
 
           {role === 'admin' && (
             <button style={addBtn} onClick={() => setAdding(true)}>
@@ -173,7 +187,7 @@ export default function Proyek({ role }) {
         </div>
       </div>
 
-      {/* ===== LIST ===== */}
+      {/* LIST */}
       <div style={wrap}>
         {filteredProjects.map(p => (
           <div key={p.id} style={card}>
@@ -216,7 +230,7 @@ export default function Proyek({ role }) {
         ))}
       </div>
 
-      {/* ===== MODAL EDIT & TAMBAH (TIDAK DIUBAH) ===== */}
+      {/* MODAL EDIT */}
       {editing && (
         <div style={overlay}>
           <div style={modal}>
@@ -254,14 +268,13 @@ export default function Proyek({ role }) {
 
             <div style={modalActions}>
               <button onClick={() => setEditing(null)}>Batal</button>
-              <button style={save} onClick={simpanEdit}>
-                Simpan
-              </button>
+              <button style={save} onClick={simpanEdit}>Simpan</button>
             </div>
           </div>
         </div>
       )}
 
+      {/* MODAL TAMBAH */}
       {adding && (
         <div style={overlay}>
           <div style={modal}>
@@ -299,9 +312,7 @@ export default function Proyek({ role }) {
 
             <div style={modalActions}>
               <button onClick={() => setAdding(false)}>Batal</button>
-              <button style={save} onClick={simpanTambah}>
-                Simpan
-              </button>
+              <button style={save} onClick={simpanTambah}>Simpan</button>
             </div>
           </div>
         </div>
@@ -310,7 +321,7 @@ export default function Proyek({ role }) {
   )
 }
 
-/* ===== STYLE ===== */
+/* ===== STYLE (LENGKAP, AMAN) ===== */
 
 const header = {
   display: 'flex',

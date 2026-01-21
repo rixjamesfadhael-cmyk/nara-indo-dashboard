@@ -1,293 +1,205 @@
 import { useEffect, useState } from 'react'
-import {
-  collection,
-  onSnapshot,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  doc,
-  serverTimestamp
-} from 'firebase/firestore'
+import { collection, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase'
 
-export default function Proyek({ role }) {
-  const [projects, setProjects] = useState([])
-  const [showForm, setShowForm] = useState(false)
-  const [editing, setEditing] = useState(null)
+export default function Histori() {
+  const [logs, setLogs] = useState([])
 
-  const [form, setForm] = useState({
-    name: '',
-    budget: '',
-    progress: 0,
-    status: 'Aktif'
-  })
+  const [type, setType] = useState('')
+  const [project, setProject] = useState('')
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
 
   useEffect(() => {
-    return onSnapshot(collection(db, 'projects'), snap => {
-      setProjects(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    return onSnapshot(collection(db, 'activity_logs'), snap => {
+      const realtimeLogs = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(l =>
+          l.action === 'CREATE' ||
+          l.action === 'UPDATE' ||
+          l.action === 'DELETE'
+        )
+
+      setLogs(realtimeLogs)
     })
   }, [])
 
-  /* ================= LOG HELPER ================= */
-  const logActivity = async (type, projectName, message) => {
-    await addDoc(collection(db, 'activity_logs'), {
-      type,
-      projectName,
-      message,
-      createdAt: serverTimestamp()
-    })
-  }
+  const projectOptions = [
+    ...new Set(logs.map(l => l.projectName).filter(Boolean))
+  ]
 
-  /* ================= CRUD ================= */
-  const openAdd = () => {
-    setEditing(null)
-    setForm({ name: '', budget: '', progress: 0, status: 'Aktif' })
-    setShowForm(true)
-  }
+  const isFiltering = type || project || fromDate || toDate
 
-  const openEdit = p => {
-    setEditing(p.id)
-    setForm({
-      name: p.name,
-      budget: p.budget,
-      progress: p.progress,
-      status: p.status
-    })
-    setShowForm(true)
-  }
+  const displayedLogs = isFiltering
+    ? logs.filter(l => {
+        const logDate = l.createdAt?.toDate?.()
 
-  const simpan = async () => {
-    if (!form.name) return alert('Nama proyek wajib diisi')
+        if (type && l.action !== type) return false
+        if (project && l.projectName !== project) return false
 
-    const payload = {
-      ...form,
-      budget: Number(form.budget),
-      progress: Number(form.progress),
-      updatedAt: serverTimestamp()
-    }
+        if (fromDate) {
+          const from = new Date(fromDate)
+          from.setHours(0, 0, 0, 0)
+          if (!logDate || logDate < from) return false
+        }
 
-    if (editing) {
-      await updateDoc(doc(db, 'projects', editing), payload)
-      await logActivity(
-        'UPDATE',
-        form.name,
-        'Proyek diperbarui'
-      )
-    } else {
-      await addDoc(collection(db, 'projects'), {
-        ...payload,
-        createdAt: serverTimestamp()
+        if (toDate) {
+          const to = new Date(toDate)
+          to.setHours(23, 59, 59, 999)
+          if (!logDate || logDate > to) return false
+        }
+
+        return true
       })
-      await logActivity(
-        'CREATE',
-        form.name,
-        'Proyek ditambahkan'
-      )
-    }
-
-    setShowForm(false)
-    setEditing(null)
-  }
-
-  const hapus = async p => {
-    if (!confirm('Hapus proyek ini?')) return
-
-    await deleteDoc(doc(db, 'projects', p.id))
-    await logActivity(
-      'DELETE',
-      p.name,
-      'Proyek dihapus'
-    )
-  }
+    : logs
 
   return (
     <div>
-      {/* HEADER */}
-      <div style={header}>
-        <h2>Daftar Proyek</h2>
+      <h2 style={{ marginBottom: 12 }}>Histori Aktivitas</h2>
 
-        {role === 'admin' && (
-          <button style={addBtn} onClick={openAdd}>
-            + Tambah Proyek
+      {/* FILTER */}
+      <div style={filterBar}>
+        <select
+          value={type}
+          onChange={e => setType(e.target.value)}
+          style={input}
+        >
+          <option value="">Semua Aktivitas</option>
+          <option value="CREATE">Create</option>
+          <option value="UPDATE">Update</option>
+          <option value="DELETE">Delete</option>
+        </select>
+
+        <select
+          value={project}
+          onChange={e => setProject(e.target.value)}
+          style={input}
+        >
+          <option value="">Semua Proyek</option>
+          {projectOptions.map(p => (
+            <option key={p} value={p}>
+              {p}
+            </option>
+          ))}
+        </select>
+
+        <input
+          type="date"
+          value={fromDate}
+          onChange={e => setFromDate(e.target.value)}
+          style={input}
+        />
+
+        <input
+          type="date"
+          value={toDate}
+          onChange={e => setToDate(e.target.value)}
+          style={input}
+        />
+
+        {isFiltering && (
+          <button
+            style={resetBtn}
+            onClick={() => {
+              setType('')
+              setProject('')
+              setFromDate('')
+              setToDate('')
+            }}
+          >
+            Reset
           </button>
         )}
       </div>
 
       {/* LIST */}
-      <div style={grid}>
-        {projects.map(p => (
-          <div key={p.id} style={card}>
-            <strong>{p.name}</strong>
-
-            <div style={{ fontSize: 13, marginTop: 4 }}>
-              Nilai: Rp {Number(p.budget || 0).toLocaleString('id-ID')}
-            </div>
-
-            {/* PROGRESS */}
-            <div style={{ marginTop: 8 }}>
-              <div style={progressHeader}>
-                <span>Progress</span>
-                <span>{p.progress}%</span>
+      {displayedLogs.length === 0 ? (
+        <div style={{ color: '#64748b', fontSize: 14 }}>
+          Tidak ada histori pada filter ini
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gap: 12 }}>
+          {displayedLogs.map(l => (
+            <div key={l.id} style={card}>
+              <div style={cardHeader}>
+                <span style={badge(l.action)}>{l.action}</span>
+                <span style={date}>
+                  {l.createdAt?.toDate
+                    ? l.createdAt
+                        .toDate()
+                        .toLocaleString('id-ID')
+                    : '-'}
+                </span>
               </div>
-              <div style={progressTrack}>
-                <div
-                  style={{
-                    ...progressFill,
-                    width: `${p.progress}%`
-                  }}
-                />
-              </div>
+
+              <strong>{l.projectName}</strong>
+              <div style={desc}>{l.description}</div>
             </div>
-
-            <div style={{ fontSize: 12, marginTop: 6 }}>
-              Status: {p.status}
-            </div>
-
-            {role === 'admin' && (
-              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                <button style={editBtn} onClick={() => openEdit(p)}>
-                  Edit
-                </button>
-                <button style={deleteBtn} onClick={() => hapus(p)}>
-                  Hapus
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* MODAL */}
-      {showForm && (
-        <div style={overlay}>
-          <div style={modal}>
-            <h3>{editing ? 'Edit Proyek' : 'Tambah Proyek'}</h3>
-
-            <input
-              placeholder="Nama Proyek"
-              value={form.name}
-              onChange={e => setForm({ ...form, name: e.target.value })}
-            />
-
-            <input
-              type="number"
-              placeholder="Nilai Kontrak"
-              value={form.budget}
-              onChange={e => setForm({ ...form, budget: e.target.value })}
-            />
-
-            <input
-              type="number"
-              placeholder="Progress (%)"
-              value={form.progress}
-              onChange={e => setForm({ ...form, progress: e.target.value })}
-            />
-
-            <select
-              value={form.status}
-              onChange={e => setForm({ ...form, status: e.target.value })}
-            >
-              <option>Aktif</option>
-              <option>Selesai</option>
-            </select>
-
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => setShowForm(false)}>Batal</button>
-              <button style={addBtn} onClick={simpan}>
-                Simpan
-              </button>
-            </div>
-          </div>
+          ))}
         </div>
       )}
     </div>
   )
 }
 
-/* ===== STYLE (TIDAK DIUBAH) ===== */
-const header = {
+/* STYLE */
+
+const filterBar = {
   display: 'flex',
-  justifyContent: 'space-between',
-  marginBottom: 20
+  gap: 10,
+  marginBottom: 20,
+  flexWrap: 'wrap'
 }
 
-const addBtn = {
-  background: '#2563eb',
-  color: '#fff',
-  border: 'none',
-  padding: '8px 14px',
+const input = {
+  padding: 8,
   borderRadius: 8,
-  cursor: 'pointer'
+  border: '1px solid #e5e7eb',
+  minWidth: 140
 }
 
-const grid = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))',
-  gap: 20
+const resetBtn = {
+  background: '#e5e7eb',
+  border: 'none',
+  padding: '8px 12px',
+  borderRadius: 8,
+  cursor: 'pointer',
+  fontWeight: 600
 }
 
 const card = {
   background: '#fff',
-  padding: 16,
+  padding: 14,
   borderRadius: 14,
-  boxShadow: '0 8px 20px rgba(0,0,0,0.06)'
+  boxShadow: '0 8px 20px rgba(0,0,0,0.05)'
 }
 
-const progressHeader = {
+const cardHeader = {
   display: 'flex',
   justifyContent: 'space-between',
-  fontSize: 12,
-  marginBottom: 4
+  marginBottom: 6,
+  fontSize: 12
 }
 
-const progressTrack = {
-  width: '100%',
-  height: 8,
-  background: '#e5e7eb',
-  borderRadius: 999
-}
-
-const progressFill = {
-  height: '100%',
-  background: '#2563eb',
+const badge = action => ({
+  padding: '2px 8px',
   borderRadius: 999,
-  transition: 'width 0.3s ease'
+  fontWeight: 700,
+  color: '#fff',
+  background:
+    action === 'CREATE'
+      ? '#16a34a'
+      : action === 'UPDATE'
+      ? '#2563eb'
+      : '#dc2626'
+})
+
+const date = {
+  color: '#64748b'
 }
 
-const editBtn = {
-  background: '#e0e7ff',
-  color: '#1d4ed8',
-  border: 'none',
-  padding: '6px 10px',
-  borderRadius: 6,
-  cursor: 'pointer'
-}
-
-const deleteBtn = {
-  background: '#fee2e2',
-  color: '#b91c1c',
-  border: 'none',
-  padding: '6px 10px',
-  borderRadius: 6,
-  cursor: 'pointer'
-}
-
-const overlay = {
-  position: 'fixed',
-  inset: 0,
-  background: 'rgba(0,0,0,0.4)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  zIndex: 50
-}
-
-const modal = {
-  background: '#fff',
-  padding: 20,
-  borderRadius: 14,
-  width: 320,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 10
+const desc = {
+  fontSize: 13,
+  color: '#475569',
+  marginTop: 4
 }
