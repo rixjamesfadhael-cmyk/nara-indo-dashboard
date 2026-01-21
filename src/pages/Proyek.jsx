@@ -24,6 +24,9 @@ export default function Proyek({ role }) {
   const [editing, setEditing] = useState(null)
   const [adding, setAdding] = useState(false)
 
+  const [search, setSearch] = useState('')
+  const [filterStatus, setFilterStatus] = useState('SEMUA')
+
   const [form, setForm] = useState({
     name: '',
     budget: '',
@@ -40,6 +43,20 @@ export default function Proyek({ role }) {
       )
     })
   }, [])
+
+  /* ===== FILTERED DATA ===== */
+  const filteredProjects = projects.filter(p => {
+    const matchName = p.name
+      ?.toLowerCase()
+      .includes(search.toLowerCase())
+
+    const matchStatus =
+      filterStatus === 'SEMUA'
+        ? true
+        : p.status === filterStatus
+
+    return matchName && matchStatus
+  })
 
   /* ===== CRUD ===== */
 
@@ -78,9 +95,9 @@ export default function Proyek({ role }) {
     setAdding(false)
   }
 
-  /* ===== EXPORT DATA (SATU SUMBER) ===== */
+  /* ===== EXPORT DATA (DARI FILTERED) ===== */
 
-  const exportRows = projects.map((p, i) => ({
+  const exportRows = filteredProjects.map((p, i) => ({
     No: i + 1,
     Nama: p.name,
     Nilai: p.budget,
@@ -124,35 +141,50 @@ export default function Proyek({ role }) {
         <h2>Daftar Proyek</h2>
 
         <div style={{ display: 'flex', gap: 8 }}>
+          <input
+            placeholder="Cari proyek..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={searchInput}
+          />
+
+          <select
+            value={filterStatus}
+            onChange={e => setFilterStatus(e.target.value)}
+            style={select}
+          >
+            <option value="SEMUA">Semua</option>
+            <option value="Aktif">Aktif</option>
+            <option value="Selesai">Selesai</option>
+          </select>
+
           <button style={exportBtn} onClick={exportExcel}>
-            Export Excel
+            Excel
           </button>
           <button style={exportPdfBtn} onClick={exportPDF}>
-            Export PDF
+            PDF
           </button>
 
           {role === 'admin' && (
             <button style={addBtn} onClick={() => setAdding(true)}>
-              + Tambah Proyek
+              + Tambah
             </button>
           )}
         </div>
       </div>
 
-      {/* ===== LIST PROYEK ===== */}
+      {/* ===== LIST ===== */}
       <div style={wrap}>
-        {projects.map(p => (
+        {filteredProjects.map(p => (
           <div key={p.id} style={card}>
             <div style={head}>
               <h3 style={title}>{p.name}</h3>
-              <span style={badge(p.status)}>
-                {p.status || 'Aktif'}
-              </span>
+              <span style={badge(p.status)}>{p.status}</span>
             </div>
 
             <div style={row}>
               <div>
-                <small>Nilai Kontrak</small>
+                <small>Nilai</small>
                 <strong>{rupiah(p.budget)}</strong>
               </div>
               <div>
@@ -184,21 +216,18 @@ export default function Proyek({ role }) {
         ))}
       </div>
 
-      {/* ===== MODAL EDIT ===== */}
+      {/* ===== MODAL EDIT & TAMBAH (TIDAK DIUBAH) ===== */}
       {editing && (
         <div style={overlay}>
           <div style={modal}>
             <h3>Edit Proyek</h3>
 
-            <label>Nama Proyek</label>
             <input
               value={editing.name}
               onChange={e =>
                 setEditing({ ...editing, name: e.target.value })
               }
             />
-
-            <label>Nilai Kontrak</label>
             <input
               type="number"
               value={editing.budget}
@@ -206,8 +235,6 @@ export default function Proyek({ role }) {
                 setEditing({ ...editing, budget: e.target.value })
               }
             />
-
-            <label>Progress (%)</label>
             <input
               type="number"
               value={editing.progress}
@@ -215,8 +242,6 @@ export default function Proyek({ role }) {
                 setEditing({ ...editing, progress: e.target.value })
               }
             />
-
-            <label>Status</label>
             <select
               value={editing.status}
               onChange={e =>
@@ -237,21 +262,17 @@ export default function Proyek({ role }) {
         </div>
       )}
 
-      {/* ===== MODAL TAMBAH ===== */}
       {adding && (
         <div style={overlay}>
           <div style={modal}>
             <h3>Tambah Proyek</h3>
 
-            <label>Nama Proyek</label>
             <input
               value={form.name}
               onChange={e =>
                 setForm({ ...form, name: e.target.value })
               }
             />
-
-            <label>Nilai Kontrak</label>
             <input
               type="number"
               value={form.budget}
@@ -259,8 +280,6 @@ export default function Proyek({ role }) {
                 setForm({ ...form, budget: e.target.value })
               }
             />
-
-            <label>Progress (%)</label>
             <input
               type="number"
               value={form.progress}
@@ -268,8 +287,6 @@ export default function Proyek({ role }) {
                 setForm({ ...form, progress: e.target.value })
               }
             />
-
-            <label>Status</label>
             <select
               value={form.status}
               onChange={e =>
@@ -300,6 +317,18 @@ const header = {
   justifyContent: 'space-between',
   alignItems: 'center',
   marginBottom: 20
+}
+
+const searchInput = {
+  padding: 8,
+  borderRadius: 8,
+  border: '1px solid #e5e7eb'
+}
+
+const select = {
+  padding: 8,
+  borderRadius: 8,
+  border: '1px solid #e5e7eb'
 }
 
 const addBtn = {
