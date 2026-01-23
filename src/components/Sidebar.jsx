@@ -2,6 +2,7 @@ import {
   LayoutDashboard,
   FolderKanban,
   History,
+  Archive,
   LogOut
 } from 'lucide-react'
 import { signOut } from 'firebase/auth'
@@ -35,6 +36,14 @@ export default function Sidebar({ page, setPage }) {
         >
           <History size={ICON_SIZE} className="icon" />
           <span>Histori</span>
+        </button>
+
+        <button
+          className={page === 'archives' ? 'active' : ''}
+          onClick={() => setPage('archives')}
+        >
+          <Archive size={ICON_SIZE} className="icon" />
+          <span>Arsip</span>
         </button>
       </nav>
 

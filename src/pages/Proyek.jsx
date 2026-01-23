@@ -35,24 +35,21 @@ export default function Proyek({ role }) {
     status: 'Aktif'
   })
 
-  /* ===== FETCH PROJECTS ===== */
   useEffect(() => {
     return onSnapshot(collection(db, 'projects'), snap => {
       setProjects(snap.docs.map(d => ({ id: d.id, ...d.data() })))
     })
   }, [])
 
-  /* ===== HISTORI LOGGER (KOMPATIBEL DENGAN Histori.jsx) ===== */
   const logActivity = async (action, projectName, description) => {
     await addDoc(collection(db, 'activity_logs'), {
-      action,            // CREATE | UPDATE | DELETE
+      action,
       projectName,
       description,
       createdAt: serverTimestamp()
     })
   }
 
-  /* ===== FILTER ===== */
   const filteredProjects = projects.filter(p => {
     const matchName = p.name
       ?.toLowerCase()
@@ -66,8 +63,6 @@ export default function Proyek({ role }) {
     return matchName && matchStatus
   })
 
-  /* ===== CRUD ===== */
-
   const hapus = async id => {
     const p = projects.find(x => x.id === id)
     if (!confirm('Hapus proyek ini?')) return
@@ -78,15 +73,37 @@ export default function Proyek({ role }) {
 
   const simpanEdit = async () => {
     const { id, name, budget, progress, status } = editing
+    const progressValue = Number(progress)
 
     await updateDoc(doc(db, 'projects', id), {
       name,
       budget: Number(budget),
-      progress: Number(progress),
+      progress: progressValue,
       status
     })
 
-    await logActivity('UPDATE', name, 'Proyek diperbarui')
+    if (progressValue === 100) {
+      const reason = prompt('Alasan memindahkan proyek ke arsip?')
+      if (reason) {
+        await addDoc(collection(db, 'arsip_proyek'), {
+          name,
+          budget: Number(budget),
+          progress: 100,
+          status: 'Selesai'
+        })
+
+        await deleteDoc(doc(db, 'projects', id))
+
+        await logActivity(
+          'ARCHIVE',
+          name,
+          `Dipindahkan ke arsip. Alasan: ${reason}`
+        )
+      }
+    } else {
+      await logActivity('UPDATE', name, 'Proyek diperbarui')
+    }
+
     setEditing(null)
   }
 
@@ -114,8 +131,6 @@ export default function Proyek({ role }) {
     })
     setAdding(false)
   }
-
-  /* ===== EXPORT ===== */
 
   const exportRows = filteredProjects.map((p, i) => ({
     No: i + 1,
@@ -154,7 +169,6 @@ export default function Proyek({ role }) {
 
   return (
     <>
-      {/* HEADER */}
       <div style={header}>
         <h2>Daftar Proyek</h2>
 
@@ -187,7 +201,6 @@ export default function Proyek({ role }) {
         </div>
       </div>
 
-      {/* LIST */}
       <div style={wrap}>
         {filteredProjects.map(p => (
           <div key={p.id} style={card}>
@@ -230,7 +243,6 @@ export default function Proyek({ role }) {
         ))}
       </div>
 
-      {/* MODAL EDIT */}
       {editing && (
         <div style={overlay}>
           <div style={modal}>
@@ -253,7 +265,10 @@ export default function Proyek({ role }) {
               type="number"
               value={editing.progress}
               onChange={e =>
-                setEditing({ ...editing, progress: e.target.value })
+                setEditing({
+                  ...editing,
+                  progress: Number(e.target.value)
+                })
               }
             />
             <select
@@ -268,13 +283,14 @@ export default function Proyek({ role }) {
 
             <div style={modalActions}>
               <button onClick={() => setEditing(null)}>Batal</button>
-              <button style={save} onClick={simpanEdit}>Simpan</button>
+              <button style={save} onClick={simpanEdit}>
+                Simpan
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* MODAL TAMBAH */}
       {adding && (
         <div style={overlay}>
           <div style={modal}>
@@ -312,7 +328,9 @@ export default function Proyek({ role }) {
 
             <div style={modalActions}>
               <button onClick={() => setAdding(false)}>Batal</button>
-              <button style={save} onClick={simpanTambah}>Simpan</button>
+              <button style={save} onClick={simpanTambah}>
+                Simpan
+              </button>
             </div>
           </div>
         </div>
@@ -321,7 +339,7 @@ export default function Proyek({ role }) {
   )
 }
 
-/* ===== STYLE (LENGKAP, AMAN) ===== */
+/* STYLE — TIDAK DIUBAH */
 
 const header = {
   display: 'flex',
