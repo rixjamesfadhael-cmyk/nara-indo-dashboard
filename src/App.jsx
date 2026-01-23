@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import { auth, db } from './firebase'
-import Login from './Login'
 
+import Login from './Login'
 import Layout from './components/Layout'
 import Sidebar from './components/Sidebar'
 import Header from './components/Header'
@@ -11,6 +11,7 @@ import Header from './components/Header'
 import Dashboard from './pages/Dashboard'
 import Proyek from './pages/Proyek'
 import Histori from './pages/Histori'
+import Arsip from './pages/Arsip'
 
 export default function App() {
   const [user, setUser] = useState(null)
@@ -45,6 +46,25 @@ export default function App() {
   if (loading) return <p>Loading...</p>
   if (!user) return <Login />
 
+  let content = null
+
+  switch (page) {
+    case 'dashboard':
+      content = <Dashboard />
+      break
+    case 'projects':
+      content = <Proyek role={role} />
+      break
+    case 'history':
+      content = <Histori />
+      break
+    case 'archives':
+      content = <Arsip role={role} />
+      break
+    default:
+      content = <Dashboard />
+  }
+
   return (
     <Layout
       theme={theme}
@@ -52,7 +72,6 @@ export default function App() {
         <Sidebar
           page={page}
           setPage={setPage}
-          onLogout={() => signOut(auth)}
         />
       }
       header={
@@ -65,9 +84,9 @@ export default function App() {
         />
       }
     >
-      {page === 'dashboard' && <Dashboard />}
-      {page === 'projects' && <Proyek role={role} />}
-      {page === 'history' && <Histori />}
+      <div key={page}>
+        {content}
+      </div>
     </Layout>
   )
 }
