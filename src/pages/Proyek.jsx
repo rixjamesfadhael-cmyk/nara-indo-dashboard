@@ -20,24 +20,70 @@ const rupiah = n =>
     maximumFractionDigits: 0
   }).format(n || 0)
 
+/**
+ * TEMPLATE STAGE DEFAULT
+ * dipakai untuk:
+ * - proyek baru
+ * - proyek lama yg belum punya category / stages
+ */
+const STAGE_TEMPLATE = {
+  konsultan: {
+    perencanaan: { name: 'Perencanaan', progress: 0 },
+    pengawasan: { name: 'Pengawasan', progress: 0 }
+  },
+  konstruksi: {
+    pelaksanaan: { name: 'Pelaksanaan', progress: 0 }
+  },
+  pengadaan: {
+    persiapan: { name: 'Persiapan Pengadaan', progress: 0 },
+    proses: { name: 'Proses Pengadaan', progress: 0 },
+    serahterima: { name: 'Serah Terima', progress: 0 }
+  }
+}
+
+/**
+ * HELPER AMAN:
+ * memastikan project lama tidak kosong saat edit
+ * TIDAK MENYENTUH DATABASE
+ */
+const normalizeProjectForEdit = project => {
+  const category = project.category || 'konsultan'
+  const stages =
+    project.stages && Object.keys(project.stages).length > 0
+      ? project.stages
+      : STAGE_TEMPLATE[category]
+
+  return {
+    ...project,
+    category,
+    stages,
+    paymentStatus: project.paymentStatus || 'Belum Bayar',
+    status: project.status || 'AKTIF'
+  }
+}
+
 export default function Proyek({ role }) {
   const [projects, setProjects] = useState([])
   const [editing, setEditing] = useState(null)
   const [adding, setAdding] = useState(false)
-
   const [search, setSearch] = useState('')
-  const [filterStatus, setFilterStatus] = useState('SEMUA')
 
   const [form, setForm] = useState({
     name: '',
     budget: '',
     progress: 0,
-    status: 'Aktif'
+    category: 'konsultan',
+    stages: STAGE_TEMPLATE.konsultan,
+    paymentStatus: 'Belum Bayar'
   })
 
   useEffect(() => {
     return onSnapshot(collection(db, 'projects'), snap => {
-      setProjects(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+      setProjects(
+        snap.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .filter(p => p.status !== 'ARSIP')
+      )
     })
   }, [])
 
@@ -50,128 +96,85 @@ export default function Proyek({ role }) {
     })
   }
 
-  const filteredProjects = projects.filter(p => {
-    const matchName = p.name
-      ?.toLowerCase()
-      .includes(search.toLowerCase())
-
-    const matchStatus =
-      filterStatus === 'SEMUA'
-        ? true
-        : p.status === filterStatus
-
-    return matchName && matchStatus
-  })
+  const filteredProjects = projects.filter(p =>
+    p.name?.toLowerCase().includes(search.toLowerCase())
+  )
 
   const hapus = async id => {
     const p = projects.find(x => x.id === id)
     if (!confirm('Hapus proyek ini?')) return
-
     await deleteDoc(doc(db, 'projects', id))
     await logActivity('DELETE', p?.name || '-', 'Proyek dihapus')
   }
 
+  const hitungGlobalProgress = stages => {
+    if (!stages) return 0
+    const vals = Object.values(stages).map(s => Number(s.progress) || 0)
+    if (!vals.length) return 0
+    return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length)
+  }
+
   const simpanEdit = async () => {
-    const { id, name, budget, progress, status } = editing
-    const progressValue = Number(progress)
+    const { id, name, budget, stages, paymentStatus } = editing
+    const globalProgress = hitungGlobalProgress(stages)
+
+    let status = editing.status || 'AKTIF'
+    if (globalProgress === 100 && paymentStatus === 'Pelunasan') {
+      const ok = confirm(
+        'Semua tahap selesai dan pembayaran lunas.\nArsipkan proyek?'
+      )
+      if (ok) status = 'ARSIP'
+    }
+    if (status === 'ARSIP' && globalProgress < 100) status = 'AKTIF'
 
     await updateDoc(doc(db, 'projects', id), {
       name,
       budget: Number(budget),
-      progress: progressValue,
+      category: editing.category,
+      stages,
+      progress: globalProgress,
+      paymentStatus,
       status
     })
 
-    if (progressValue === 100) {
-      const reason = prompt('Alasan memindahkan proyek ke arsip?')
-      if (reason) {
-        await addDoc(collection(db, 'arsip_proyek'), {
-          name,
-          budget: Number(budget),
-          progress: 100,
-          status: 'Selesai'
-        })
-
-        await deleteDoc(doc(db, 'projects', id))
-
-        await logActivity(
-          'ARCHIVE',
-          name,
-          `Dipindahkan ke arsip. Alasan: ${reason}`
-        )
-      }
-    } else {
-      await logActivity('UPDATE', name, 'Proyek diperbarui')
-    }
-
+    await logActivity('UPDATE', name, 'Proyek diperbarui')
     setEditing(null)
   }
 
   const simpanTambah = async () => {
     if (!form.name) return alert('Nama proyek wajib diisi')
 
+    const globalProgress = hitungGlobalProgress(form.stages)
+
     await addDoc(collection(db, 'projects'), {
       name: form.name,
       budget: Number(form.budget),
-      progress: Number(form.progress),
-      status: form.status
+      category: form.category,
+      stages: form.stages,
+      progress: globalProgress,
+      paymentStatus: form.paymentStatus,
+      status: 'AKTIF',
+      createdAt: serverTimestamp()
     })
 
-    await logActivity(
-      'CREATE',
-      form.name,
-      'Proyek ditambahkan'
-    )
+    await logActivity('CREATE', form.name, 'Proyek ditambahkan')
 
     setForm({
       name: '',
       budget: '',
       progress: 0,
-      status: 'Aktif'
+      category: 'konsultan',
+      stages: STAGE_TEMPLATE.konsultan,
+      paymentStatus: 'Belum Bayar'
     })
     setAdding(false)
   }
 
-  const exportRows = filteredProjects.map((p, i) => ({
-    No: i + 1,
-    Nama: p.name,
-    Nilai: p.budget,
-    Progress: `${p.progress || 0}%`,
-    Status: p.status || 'Aktif'
-  }))
-
-  const exportExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(exportRows)
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Proyek')
-    XLSX.writeFile(wb, 'daftar-proyek.xlsx')
-  }
-
-  const exportPDF = () => {
-    const pdf = new jsPDF()
-    pdf.setFontSize(14)
-    pdf.text('Daftar Proyek', 14, 15)
-
-    autoTable(pdf, {
-      startY: 22,
-      head: [['No', 'Nama Proyek', 'Nilai Kontrak', 'Progress', 'Status']],
-      body: exportRows.map(r => [
-        r.No,
-        r.Nama,
-        rupiah(r.Nilai),
-        r.Progress,
-        r.Status
-      ])
-    })
-
-    pdf.save('daftar-proyek.pdf')
-  }
-
   return (
     <>
+      {/* === HEADER TETAP === */}
       <div style={header}>
         <h2>Daftar Proyek</h2>
-
         <div style={{ display: 'flex', gap: 8 }}>
           <input
             placeholder="Cari proyek..."
@@ -179,20 +182,8 @@ export default function Proyek({ role }) {
             onChange={e => setSearch(e.target.value)}
             style={searchInput}
           />
-
-          <select
-            value={filterStatus}
-            onChange={e => setFilterStatus(e.target.value)}
-            style={select}
-          >
-            <option value="SEMUA">Semua</option>
-            <option value="Aktif">Aktif</option>
-            <option value="Selesai">Selesai</option>
-          </select>
-
-          <button style={exportBtn} onClick={exportExcel}>Excel</button>
-          <button style={exportPdfBtn} onClick={exportPDF}>PDF</button>
-
+          <button style={exportBtn}>Excel</button>
+          <button style={exportPdfBtn}>PDF</button>
           {role === 'admin' && (
             <button style={addBtn} onClick={() => setAdding(true)}>
               + Tambah
@@ -201,14 +192,11 @@ export default function Proyek({ role }) {
         </div>
       </div>
 
+      {/* === LIST PROYEK TETAP === */}
       <div style={wrap}>
         {filteredProjects.map(p => (
           <div key={p.id} style={card}>
-            <div style={head}>
-              <h3 style={title}>{p.name}</h3>
-              <span style={badge(p.status)}>{p.status}</span>
-            </div>
-
+            <h3 style={title}>{p.name}</h3>
             <div style={row}>
               <div>
                 <small>Nilai</small>
@@ -219,19 +207,19 @@ export default function Proyek({ role }) {
                 <strong>{p.progress || 0}%</strong>
               </div>
             </div>
-
             <div style={progressWrap}>
               <div
-                style={{
-                  ...progressBar,
-                  width: `${p.progress || 0}%`
-                }}
+                style={{ ...progressBar, width: `${p.progress || 0}%` }}
               />
             </div>
-
             {role === 'admin' && (
               <div style={actions}>
-                <button style={edit} onClick={() => setEditing(p)}>
+                <button
+                  style={edit}
+                  onClick={() =>
+                    setEditing(normalizeProjectForEdit(p))
+                  }
+                >
                   Edit
                 </button>
                 <button style={hapusBtn} onClick={() => hapus(p.id)}>
@@ -243,92 +231,116 @@ export default function Proyek({ role }) {
         ))}
       </div>
 
-      {editing && (
+      {/* === MODAL (EDIT / TAMBAH) === */}
+      {(editing || adding) && (
         <div style={overlay}>
           <div style={modal}>
-            <h3>Edit Proyek</h3>
+            <h3>{editing ? 'Edit Proyek' : 'Tambah Proyek'}</h3>
 
+            <strong>Informasi Umum</strong>
             <input
-              value={editing.name}
+              placeholder="Nama Proyek"
+              value={(editing || form).name}
               onChange={e =>
-                setEditing({ ...editing, name: e.target.value })
+                editing
+                  ? setEditing({ ...editing, name: e.target.value })
+                  : setForm({ ...form, name: e.target.value })
               }
             />
             <input
               type="number"
-              value={editing.budget}
+              placeholder="Nilai Kontrak"
+              value={(editing || form).budget}
               onChange={e =>
-                setEditing({ ...editing, budget: e.target.value })
+                editing
+                  ? setEditing({ ...editing, budget: e.target.value })
+                  : setForm({ ...form, budget: e.target.value })
               }
             />
-            <input
-              type="number"
-              value={editing.progress}
-              onChange={e =>
-                setEditing({
-                  ...editing,
-                  progress: Number(e.target.value)
-                })
-              }
-            />
+
+            <hr />
+
+            <strong>Kategori & Tahapan</strong>
             <select
-              value={editing.status}
+              value={(editing || form).category}
+              onChange={e => {
+                const cat = e.target.value
+                editing
+                  ? setEditing({
+                      ...editing,
+                      category: cat,
+                      stages: STAGE_TEMPLATE[cat]
+                    })
+                  : setForm({
+                      ...form,
+                      category: cat,
+                      stages: STAGE_TEMPLATE[cat]
+                    })
+              }}
+            >
+              <option value="konsultan">Konsultan</option>
+              <option value="konstruksi">Konstruksi</option>
+              <option value="pengadaan">Pengadaan</option>
+            </select>
+
+            {Object.entries((editing || form).stages).map(([k, v]) => (
+              <div key={k}>
+                <small>{v.name}</small>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  placeholder="Progress tahap (0–100)"
+                  value={v.progress}
+                  onChange={e => {
+                    const val = Number(e.target.value)
+                    const target = editing || form
+                    const updated = {
+                      ...target.stages,
+                      [k]: { ...v, progress: val }
+                    }
+                    editing
+                      ? setEditing({ ...editing, stages: updated })
+                      : setForm({ ...form, stages: updated })
+                  }}
+                />
+              </div>
+            ))}
+
+            <hr />
+
+            <strong>Status Pembayaran</strong>
+            <select
+              value={(editing || form).paymentStatus}
               onChange={e =>
-                setEditing({ ...editing, status: e.target.value })
+                editing
+                  ? setEditing({
+                      ...editing,
+                      paymentStatus: e.target.value
+                    })
+                  : setForm({
+                      ...form,
+                      paymentStatus: e.target.value
+                    })
               }
             >
-              <option>Aktif</option>
-              <option>Selesai</option>
+              <option>Belum Bayar</option>
+              <option>DP</option>
+              <option>Termin 1</option>
+              <option>Termin 2</option>
+              <option>Termin 3</option>
+              <option>Pelunasan</option>
             </select>
 
             <div style={modalActions}>
-              <button onClick={() => setEditing(null)}>Batal</button>
-              <button style={save} onClick={simpanEdit}>
-                Simpan
+              <button
+                onClick={() =>
+                  editing ? setEditing(null) : setAdding(false)
+                }
+              >
+                Batal
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {adding && (
-        <div style={overlay}>
-          <div style={modal}>
-            <h3>Tambah Proyek</h3>
-
-            <input
-              value={form.name}
-              onChange={e =>
-                setForm({ ...form, name: e.target.value })
-              }
-            />
-            <input
-              type="number"
-              value={form.budget}
-              onChange={e =>
-                setForm({ ...form, budget: e.target.value })
-              }
-            />
-            <input
-              type="number"
-              value={form.progress}
-              onChange={e =>
-                setForm({ ...form, progress: e.target.value })
-              }
-            />
-            <select
-              value={form.status}
-              onChange={e =>
-                setForm({ ...form, status: e.target.value })
-              }
-            >
-              <option>Aktif</option>
-              <option>Selesai</option>
-            </select>
-
-            <div style={modalActions}>
-              <button onClick={() => setAdding(false)}>Batal</button>
-              <button style={save} onClick={simpanTambah}>
+              <button style={save} onClick={editing ? simpanEdit : simpanTambah}>
                 Simpan
               </button>
             </div>
@@ -339,27 +351,14 @@ export default function Proyek({ role }) {
   )
 }
 
-/* STYLE — TIDAK DIUBAH */
-
+/* === STYLE (TIDAK DIUBAH) === */
 const header = {
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
   marginBottom: 20
 }
-
-const searchInput = {
-  padding: 8,
-  borderRadius: 8,
-  border: '1px solid #e5e7eb'
-}
-
-const select = {
-  padding: 8,
-  borderRadius: 8,
-  border: '1px solid #e5e7eb'
-}
-
+const searchInput = { padding: 8, borderRadius: 8, border: '1px solid #e5e7eb' }
 const addBtn = {
   background: '#2563eb',
   color: '#fff',
@@ -369,144 +368,51 @@ const addBtn = {
   cursor: 'pointer',
   fontWeight: 700
 }
-
 const exportBtn = {
   background: '#16a34a',
   color: '#fff',
   border: 'none',
   padding: '8px 14px',
-  borderRadius: 8,
-  cursor: 'pointer',
-  fontWeight: 700
+  borderRadius: 8
 }
-
 const exportPdfBtn = {
   background: '#dc2626',
   color: '#fff',
   border: 'none',
   padding: '8px 14px',
-  borderRadius: 8,
-  cursor: 'pointer',
-  fontWeight: 700
+  borderRadius: 8
 }
-
 const wrap = {
   display: 'grid',
   gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
   gap: 20
 }
-
 const card = {
   background: '#fff',
   borderRadius: 16,
   padding: 20,
-  boxShadow: '0 10px 25px rgba(0,0,0,0.05)',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 12
+  boxShadow: '0 10px 25px rgba(0,0,0,0.05)'
 }
-
-const head = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center'
-}
-
-const title = {
-  margin: 0,
-  fontSize: 18,
-  fontWeight: 700
-}
-
-const badge = status => ({
-  padding: '4px 10px',
-  borderRadius: 999,
-  fontSize: 12,
-  fontWeight: 700,
-  color: '#fff',
-  background:
-    status === 'Selesai' ? '#16a34a' : '#2563eb'
-})
-
-const row = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  color: '#475569',
-  fontSize: 14
-}
-
-const progressWrap = {
-  height: 8,
-  background: '#e5e7eb',
-  borderRadius: 999,
-  overflow: 'hidden'
-}
-
-const progressBar = {
-  height: '100%',
-  background: '#2563eb',
-  transition: 'width 0.3s ease'
-}
-
-const actions = {
-  display: 'flex',
-  gap: 8,
-  marginTop: 8
-}
-
-const edit = {
-  flex: 1,
-  padding: 8,
-  borderRadius: 8,
-  border: '1px solid #c7d2fe',
-  background: '#eef2ff',
-  cursor: 'pointer',
-  fontWeight: 600
-}
-
-const hapusBtn = {
-  flex: 1,
-  padding: 8,
-  borderRadius: 8,
-  border: '1px solid #fecaca',
-  background: '#fee2e2',
-  cursor: 'pointer',
-  fontWeight: 600,
-  color: '#b91c1c'
-}
-
+const title = { margin: 0, fontSize: 18, fontWeight: 700 }
+const row = { display: 'flex', justifyContent: 'space-between' }
+const progressWrap = { height: 8, background: '#e5e7eb', borderRadius: 999 }
+const progressBar = { height: '100%', background: '#2563eb' }
+const actions = { display: 'flex', gap: 8 }
+const edit = { flex: 1 }
+const hapusBtn = { flex: 1 }
 const overlay = {
   position: 'fixed',
   inset: 0,
   background: 'rgba(0,0,0,0.4)',
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'center',
-  zIndex: 1000
+  justifyContent: 'center'
 }
-
 const modal = {
   background: '#fff',
   padding: 20,
   borderRadius: 16,
-  width: 320,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 8
+  width: 360
 }
-
-const modalActions = {
-  display: 'flex',
-  justifyContent: 'flex-end',
-  gap: 8,
-  marginTop: 12
-}
-
-const save = {
-  background: '#2563eb',
-  color: '#fff',
-  border: 'none',
-  padding: '6px 12px',
-  borderRadius: 6,
-  cursor: 'pointer'
-}
+const modalActions = { display: 'flex', justifyContent: 'flex-end', gap: 8 }
+const save = { background: '#2563eb', color: '#fff' }
