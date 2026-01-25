@@ -13,6 +13,7 @@ import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
+/* ================= UTIL ================= */
 const rupiah = n =>
   new Intl.NumberFormat('id-ID', {
     style: 'currency',
@@ -20,159 +21,151 @@ const rupiah = n =>
     maximumFractionDigits: 0
   }).format(n || 0)
 
-/**
- * TEMPLATE STAGE DEFAULT
- * dipakai untuk:
- * - proyek baru
- * - proyek lama yg belum punya category / stages
- */
-const STAGE_TEMPLATE = {
-  konsultan: {
-    perencanaan: { name: 'Perencanaan', progress: 0 },
-    pengawasan: { name: 'Pengawasan', progress: 0 }
-  },
-  konstruksi: {
-    pelaksanaan: { name: 'Pelaksanaan', progress: 0 }
-  },
-  pengadaan: {
-    persiapan: { name: 'Persiapan Pengadaan', progress: 0 },
-    proses: { name: 'Proses Pengadaan', progress: 0 },
-    serahterima: { name: 'Serah Terima', progress: 0 }
-  }
+/* ================= WORKFLOW RESMI ================= */
+const WORKFLOW_KONSULTAN = {
+  perencanaan: [
+    { key: 'survey', label: 'Survei & Pengumpulan Data' },
+    { key: 'kak', label: 'Penyusunan KAK' },
+    { key: 'ded', label: 'DED / Gambar Teknis' },
+    { key: 'rab', label: 'RAB & Spesifikasi Teknis' }
+  ],
+  pengawasan: [
+    { key: 'lap_mingguan', label: 'Laporan Mingguan' },
+    { key: 'lap_bulanan', label: 'Laporan Bulanan' },
+    { key: 'lap_akhir', label: 'Laporan Akhir' }
+  ]
 }
 
-/**
- * HELPER AMAN:
- * memastikan project lama tidak kosong saat edit
- * TIDAK MENYENTUH DATABASE
- */
-const normalizeProjectForEdit = project => {
-  const category = project.category || 'konsultan'
-  const stages =
-    project.stages && Object.keys(project.stages).length > 0
-      ? project.stages
-      : STAGE_TEMPLATE[category]
-
-  return {
-    ...project,
-    category,
-    stages,
-    paymentStatus: project.paymentStatus || 'Belum Bayar',
-    status: project.status || 'AKTIF'
-  }
-}
-
+/* ================= COMPONENT ================= */
 export default function Proyek({ role }) {
   const [projects, setProjects] = useState([])
   const [editing, setEditing] = useState(null)
   const [adding, setAdding] = useState(false)
   const [search, setSearch] = useState('')
 
-  const [form, setForm] = useState({
+  const emptyForm = {
     name: '',
+    instansi: '',
+    lokasi: '',
     budget: '',
-    progress: 0,
     category: 'konsultan',
-    stages: STAGE_TEMPLATE.konsultan,
-    paymentStatus: 'Belum Bayar'
-  })
+    subType: '',
+    workflow: {},
+    paymentStatus: 'Belum Bayar',
+    progress: 0
+  }
 
+  const [form, setForm] = useState(emptyForm)
+
+  /* ================= LOAD DATA ================= */
   useEffect(() => {
     return onSnapshot(collection(db, 'projects'), snap => {
       setProjects(
-        snap.docs
-          .map(d => ({ id: d.id, ...d.data() }))
-          .filter(p => p.status !== 'ARSIP')
+        snap.docs.map(d => ({ id: d.id, ...d.data() }))
       )
     })
   }, [])
 
-  const logActivity = async (action, projectName, description) => {
+  /* ================= HELPERS ================= */
+  const logActivity = async (action, projectName) => {
     await addDoc(collection(db, 'activity_logs'), {
       action,
       projectName,
-      description,
       createdAt: serverTimestamp()
     })
   }
-
-  const filteredProjects = projects.filter(p =>
-    p.name?.toLowerCase().includes(search.toLowerCase())
-  )
 
   const hapus = async id => {
     const p = projects.find(x => x.id === id)
     if (!confirm('Hapus proyek ini?')) return
     await deleteDoc(doc(db, 'projects', id))
-    await logActivity('DELETE', p?.name || '-', 'Proyek dihapus')
+    await logActivity('DELETE', p?.name || '-')
   }
 
-  const hitungGlobalProgress = stages => {
-    if (!stages) return 0
-    const vals = Object.values(stages).map(s => Number(s.progress) || 0)
-    if (!vals.length) return 0
+  const hitungProgressWorkflow = (subType, workflow) => {
+    if (!subType) return 0
+    const steps = WORKFLOW_KONSULTAN[subType]
+    const vals = steps.map(s => Number(workflow?.[s.key] || 0))
     return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length)
   }
 
-  const simpanEdit = async () => {
-    const { id, name, budget, stages, paymentStatus } = editing
-    const globalProgress = hitungGlobalProgress(stages)
-
-    let status = editing.status || 'AKTIF'
-    if (globalProgress === 100 && paymentStatus === 'Pelunasan') {
-      const ok = confirm(
-        'Semua tahap selesai dan pembayaran lunas.\nArsipkan proyek?'
-      )
-      if (ok) status = 'ARSIP'
-    }
-    if (status === 'ARSIP' && globalProgress < 100) status = 'AKTIF'
-
-    await updateDoc(doc(db, 'projects', id), {
-      name,
-      budget: Number(budget),
-      category: editing.category,
-      stages,
-      progress: globalProgress,
-      paymentStatus,
-      status
-    })
-
-    await logActivity('UPDATE', name, 'Proyek diperbarui')
-    setEditing(null)
-  }
-
+  /* ================= SAVE ================= */
   const simpanTambah = async () => {
     if (!form.name) return alert('Nama proyek wajib diisi')
+    if (form.category === 'konsultan' && !form.subType)
+      return alert('Pilih jenis konsultan')
 
-    const globalProgress = hitungGlobalProgress(form.stages)
+    const progress =
+      form.category === 'konsultan'
+        ? hitungProgressWorkflow(form.subType, form.workflow)
+        : Number(form.progress || 0)
 
     await addDoc(collection(db, 'projects'), {
-      name: form.name,
+      ...form,
       budget: Number(form.budget),
-      category: form.category,
-      stages: form.stages,
-      progress: globalProgress,
-      paymentStatus: form.paymentStatus,
+      progress,
       status: 'AKTIF',
       createdAt: serverTimestamp()
     })
 
-    await logActivity('CREATE', form.name, 'Proyek ditambahkan')
-
-    setForm({
-      name: '',
-      budget: '',
-      progress: 0,
-      category: 'konsultan',
-      stages: STAGE_TEMPLATE.konsultan,
-      paymentStatus: 'Belum Bayar'
-    })
+    await logActivity('CREATE', form.name)
+    setForm(emptyForm)
     setAdding(false)
   }
 
+  const simpanEdit = async () => {
+    const progress =
+      editing.category === 'konsultan'
+        ? hitungProgressWorkflow(editing.subType, editing.workflow)
+        : Number(editing.progress || 0)
+
+    await updateDoc(doc(db, 'projects', editing.id), {
+      ...editing,
+      budget: Number(editing.budget),
+      progress
+    })
+
+    await logActivity('UPDATE', editing.name)
+    setEditing(null)
+  }
+
+  /* ================= EXPORT ================= */
+  const exportRows = projects.map((p, i) => ({
+    No: i + 1,
+    Nama: p.name,
+    Nilai: p.budget,
+    Progress: `${p.progress || 0}%`
+  }))
+
+  const exportExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(exportRows)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Proyek')
+    XLSX.writeFile(wb, 'daftar-proyek.xlsx')
+  }
+
+  const exportPDF = () => {
+    const pdf = new jsPDF()
+    pdf.text('Daftar Proyek', 14, 15)
+    autoTable(pdf, {
+      startY: 20,
+      head: [['No', 'Nama', 'Nilai', 'Progress']],
+      body: exportRows.map(r => [
+        r.No,
+        r.Nama,
+        rupiah(r.Nilai),
+        r.Progress
+      ])
+    })
+    pdf.save('daftar-proyek.pdf')
+  }
+
+  const active = editing || form
+
+  /* ================= RENDER ================= */
   return (
     <>
-      {/* === HEADER TETAP === */}
+      {/* HEADER */}
       <div style={header}>
         <h2>Daftar Proyek</h2>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -182,8 +175,8 @@ export default function Proyek({ role }) {
             onChange={e => setSearch(e.target.value)}
             style={searchInput}
           />
-          <button style={exportBtn}>Excel</button>
-          <button style={exportPdfBtn}>PDF</button>
+          <button style={exportBtn} onClick={exportExcel}>Excel</button>
+          <button style={exportPdfBtn} onClick={exportPDF}>PDF</button>
           {role === 'admin' && (
             <button style={addBtn} onClick={() => setAdding(true)}>
               + Tambah
@@ -192,55 +185,43 @@ export default function Proyek({ role }) {
         </div>
       </div>
 
-      {/* === LIST PROYEK TETAP === */}
+      {/* LIST */}
       <div style={wrap}>
-        {filteredProjects.map(p => (
-          <div key={p.id} style={card}>
-            <h3 style={title}>{p.name}</h3>
-            <div style={row}>
-              <div>
-                <small>Nilai</small>
-                <strong>{rupiah(p.budget)}</strong>
+        {projects
+          .filter(p =>
+            p.name?.toLowerCase().includes(search.toLowerCase())
+          )
+          .map(p => (
+            <div key={p.id} style={card}>
+              <h3>{p.name}</h3>
+              <strong>{rupiah(p.budget)}</strong>
+              <div style={progressWrap}>
+                <div
+                  style={{
+                    ...progressBar,
+                    width: `${p.progress || 0}%`
+                  }}
+                />
               </div>
-              <div>
-                <small>Progress</small>
-                <strong>{p.progress || 0}%</strong>
-              </div>
+              {role === 'admin' && (
+                <div style={actions}>
+                  <button onClick={() => setEditing(p)}>Edit</button>
+                  <button onClick={() => hapus(p.id)}>Hapus</button>
+                </div>
+              )}
             </div>
-            <div style={progressWrap}>
-              <div
-                style={{ ...progressBar, width: `${p.progress || 0}%` }}
-              />
-            </div>
-            {role === 'admin' && (
-              <div style={actions}>
-                <button
-                  style={edit}
-                  onClick={() =>
-                    setEditing(normalizeProjectForEdit(p))
-                  }
-                >
-                  Edit
-                </button>
-                <button style={hapusBtn} onClick={() => hapus(p.id)}>
-                  Hapus
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
+          ))}
       </div>
 
-      {/* === MODAL (EDIT / TAMBAH) === */}
-      {(editing || adding) && (
+      {/* MODAL */}
+      {(adding || editing) && (
         <div style={overlay}>
           <div style={modal}>
             <h3>{editing ? 'Edit Proyek' : 'Tambah Proyek'}</h3>
 
-            <strong>Informasi Umum</strong>
             <input
               placeholder="Nama Proyek"
-              value={(editing || form).name}
+              value={active.name}
               onChange={e =>
                 editing
                   ? setEditing({ ...editing, name: e.target.value })
@@ -248,9 +229,27 @@ export default function Proyek({ role }) {
               }
             />
             <input
+              placeholder="Instansi"
+              value={active.instansi || ''}
+              onChange={e =>
+                editing
+                  ? setEditing({ ...editing, instansi: e.target.value })
+                  : setForm({ ...form, instansi: e.target.value })
+              }
+            />
+            <input
+              placeholder="Lokasi"
+              value={active.lokasi || ''}
+              onChange={e =>
+                editing
+                  ? setEditing({ ...editing, lokasi: e.target.value })
+                  : setForm({ ...form, lokasi: e.target.value })
+              }
+            />
+            <input
               type="number"
               placeholder="Nilai Kontrak"
-              value={(editing || form).budget}
+              value={active.budget}
               onChange={e =>
                 editing
                   ? setEditing({ ...editing, budget: e.target.value })
@@ -258,60 +257,73 @@ export default function Proyek({ role }) {
               }
             />
 
-            <hr />
-
-            <strong>Kategori & Tahapan</strong>
+            {/* KATEGORI */}
             <select
-              value={(editing || form).category}
+              value={active.category}
               onChange={e => {
                 const cat = e.target.value
+                const base = {
+                  category: cat,
+                  subType: '',
+                  workflow: {}
+                }
                 editing
-                  ? setEditing({
-                      ...editing,
-                      category: cat,
-                      stages: STAGE_TEMPLATE[cat]
-                    })
-                  : setForm({
-                      ...form,
-                      category: cat,
-                      stages: STAGE_TEMPLATE[cat]
-                    })
+                  ? setEditing({ ...editing, ...base })
+                  : setForm({ ...form, ...base })
               }}
             >
               <option value="konsultan">Konsultan</option>
-              <option value="konstruksi">Konstruksi</option>
-              <option value="pengadaan">Pengadaan</option>
             </select>
 
-            {Object.entries((editing || form).stages).map(([k, v]) => (
-              <div key={k}>
-                <small>{v.name}</small>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  placeholder="Progress tahap (0–100)"
-                  value={v.progress}
-                  onChange={e => {
-                    const val = Number(e.target.value)
-                    const target = editing || form
-                    const updated = {
-                      ...target.stages,
-                      [k]: { ...v, progress: val }
-                    }
-                    editing
-                      ? setEditing({ ...editing, stages: updated })
-                      : setForm({ ...form, stages: updated })
-                  }}
-                />
-              </div>
-            ))}
-
-            <hr />
-
-            <strong>Status Pembayaran</strong>
+            {/* SUB KONSULTAN */}
             <select
-              value={(editing || form).paymentStatus}
+              value={active.subType}
+              onChange={e => {
+                const val = e.target.value
+                editing
+                  ? setEditing({ ...editing, subType: val, workflow: {} })
+                  : setForm({ ...form, subType: val, workflow: {} })
+              }}
+            >
+              <option value="">-- Pilih Jenis Konsultan --</option>
+              <option value="perencanaan">Perencanaan</option>
+              <option value="pengawasan">Pengawasan</option>
+            </select>
+
+            {/* WORKFLOW BERTAHAP */}
+            {active.subType &&
+              WORKFLOW_KONSULTAN[active.subType].map((s, i) => {
+                const prev =
+                  i === 0
+                    ? true
+                    : Number(active.workflow?.[
+                        WORKFLOW_KONSULTAN[active.subType][i - 1].key
+                      ]) === 100
+
+                if (!prev) return null
+
+                return (
+                  <div key={s.key}>
+                    <small>{s.label}</small>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={active.workflow?.[s.key] || 0}
+                      onChange={e => {
+                        const val = Number(e.target.value)
+                        const wf = { ...active.workflow, [s.key]: val }
+                        editing
+                          ? setEditing({ ...editing, workflow: wf })
+                          : setForm({ ...form, workflow: wf })
+                      }}
+                    />
+                  </div>
+                )
+              })}
+
+            <select
+              value={active.paymentStatus}
               onChange={e =>
                 editing
                   ? setEditing({
@@ -328,16 +340,11 @@ export default function Proyek({ role }) {
               <option>DP</option>
               <option>Termin 1</option>
               <option>Termin 2</option>
-              <option>Termin 3</option>
               <option>Pelunasan</option>
             </select>
 
             <div style={modalActions}>
-              <button
-                onClick={() =>
-                  editing ? setEditing(null) : setAdding(false)
-                }
-              >
+              <button onClick={() => (editing ? setEditing(null) : setAdding(false))}>
                 Batal
               </button>
               <button style={save} onClick={editing ? simpanEdit : simpanTambah}>
@@ -351,68 +358,18 @@ export default function Proyek({ role }) {
   )
 }
 
-/* === STYLE (TIDAK DIUBAH) === */
-const header = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  marginBottom: 20
-}
-const searchInput = { padding: 8, borderRadius: 8, border: '1px solid #e5e7eb' }
-const addBtn = {
-  background: '#2563eb',
-  color: '#fff',
-  border: 'none',
-  padding: '8px 14px',
-  borderRadius: 8,
-  cursor: 'pointer',
-  fontWeight: 700
-}
-const exportBtn = {
-  background: '#16a34a',
-  color: '#fff',
-  border: 'none',
-  padding: '8px 14px',
-  borderRadius: 8
-}
-const exportPdfBtn = {
-  background: '#dc2626',
-  color: '#fff',
-  border: 'none',
-  padding: '8px 14px',
-  borderRadius: 8
-}
-const wrap = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-  gap: 20
-}
-const card = {
-  background: '#fff',
-  borderRadius: 16,
-  padding: 20,
-  boxShadow: '0 10px 25px rgba(0,0,0,0.05)'
-}
-const title = { margin: 0, fontSize: 18, fontWeight: 700 }
-const row = { display: 'flex', justifyContent: 'space-between' }
+/* ================= STYLE ================= */
+const header = { display: 'flex', justifyContent: 'space-between' }
+const searchInput = { padding: 8 }
+const addBtn = { background: '#2563eb', color: '#fff' }
+const exportBtn = { background: '#16a34a', color: '#fff' }
+const exportPdfBtn = { background: '#dc2626', color: '#fff' }
+const wrap = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px,1fr))', gap: 20 }
+const card = { background: '#fff', padding: 16, borderRadius: 12 }
 const progressWrap = { height: 8, background: '#e5e7eb', borderRadius: 999 }
 const progressBar = { height: '100%', background: '#2563eb' }
 const actions = { display: 'flex', gap: 8 }
-const edit = { flex: 1 }
-const hapusBtn = { flex: 1 }
-const overlay = {
-  position: 'fixed',
-  inset: 0,
-  background: 'rgba(0,0,0,0.4)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center'
-}
-const modal = {
-  background: '#fff',
-  padding: 20,
-  borderRadius: 16,
-  width: 360
-}
+const overlay = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }
+const modal = { background: '#fff', padding: 20, borderRadius: 16, width: 420 }
 const modalActions = { display: 'flex', justifyContent: 'flex-end', gap: 8 }
 const save = { background: '#2563eb', color: '#fff' }
