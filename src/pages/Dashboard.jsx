@@ -1,7 +1,4 @@
 import { useEffect, useState } from 'react'
-import { collection, onSnapshot } from 'firebase/firestore'
-import { db } from '../firebase'
-
 import {
   Chart as ChartJS,
   ArcElement,
@@ -13,6 +10,8 @@ import {
   LineElement
 } from 'chart.js'
 import { Pie, Line } from 'react-chartjs-2'
+import { subscribeProjects } from '../services/project.service'
+import { buildDashboardSummary } from '../services/dashboard.logic'
 
 ChartJS.register(
   ArcElement,
@@ -35,36 +34,16 @@ export default function Dashboard() {
   const [projects, setProjects] = useState([])
 
   useEffect(() => {
-    const ref = collection(db, 'projects')
-    return onSnapshot(ref, snap => {
-      setProjects(
-        snap.docs.map(d => ({
-          id: d.id,
-          ...d.data()
-        }))
-      )
-    })
+    return subscribeProjects(setProjects)
   }, [])
 
-  const aktif = projects.filter(p => p.status !== 'Selesai')
-  const selesai = projects.filter(p => p.status === 'Selesai')
-
-  const totalNilai = aktif.reduce(
-    (a, b) => a + (Number(b.budget) || 0),
-    0
-  )
-
-  const avgProgress =
-    aktif.length === 0
-      ? 0
-      : (
-          aktif.reduce(
-            (a, b) => a + (Number(b.progress) || 0),
-            0
-          ) / aktif.length
-        ).toFixed(1)
-
-  /* ===== CHART DATA ===== */
+  const {
+    aktif,
+    selesai,
+    totalNilaiAktif,
+    avgProgress,
+    butuhPerhatian
+  } = buildDashboardSummary(projects)
 
   const pieData = {
     labels: ['Aktif', 'Selesai'],
@@ -76,53 +55,53 @@ export default function Dashboard() {
     ]
   }
 
-  const limitedAktif = aktif.slice(0, 10)
-
   const lineData = {
-    labels: limitedAktif.map(
-      (p, i) => p.name || `Proyek ${i + 1}`
-    ),
+    labels: aktif.slice(0, 10).map(p => p.name),
     datasets: [
       {
         label: 'Progress (%)',
-        data: limitedAktif.map(p => p.progress || 0),
+        data: aktif.slice(0, 10).map(p => p.progress || 0),
         borderColor: '#2563eb',
         backgroundColor: 'rgba(37,99,235,0.2)',
         tension: 0.4,
-        fill: true,
-        pointRadius: 4
+        fill: true
       }
     ]
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-      {/* ===== CARDS ===== */}
+      {/* SUMMARY */}
       <div style={cardWrap}>
         <Card title="Proyek Aktif" value={aktif.length} />
-        <Card title="Total Nilai Aktif" value={rupiah(totalNilai)} />
+        <Card title="Total Nilai Aktif" value={rupiah(totalNilaiAktif)} />
         <Card title="Proyek Selesai" value={selesai.length} />
         <Card title="Rata-rata Progress" value={`${avgProgress}%`} />
       </div>
 
-      {/* ===== CHART ===== */}
+      {/* ACTIONABLE */}
+      <div style={card}>
+        <h3>Perlu Perhatian</h3>
+        {butuhPerhatian.length === 0 ? (
+          <small>Semua proyek dalam kondisi baik</small>
+        ) : (
+          butuhPerhatian.map(p => (
+            <div key={p.id} style={{ fontSize: 14 }}>
+              • {p.name} ({p.progress || 0}%)
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* CHART */}
       <div style={chartWrap}>
         <div style={chartCard}>
-          <h3 style={chartTitle}>Komposisi Proyek</h3>
-          {projects.length === 0 ? (
-            <Empty />
-          ) : (
-            <Pie data={pieData} />
-          )}
+          <h3>Komposisi Proyek</h3>
+          <Pie data={pieData} />
         </div>
-
         <div style={chartCard}>
-          <h3 style={chartTitle}>Progress Proyek Aktif</h3>
-          {aktif.length === 0 ? (
-            <Empty />
-          ) : (
-            <Line data={lineData} />
-          )}
+          <h3>Progress Proyek Aktif</h3>
+          <Line data={lineData} />
         </div>
       </div>
     </div>
@@ -138,23 +117,7 @@ function Card({ title, value }) {
   )
 }
 
-function Empty() {
-  return (
-    <div
-      style={{
-        padding: 40,
-        textAlign: 'center',
-        color: '#64748b',
-        fontSize: 14
-      }}
-    >
-      Belum ada data
-    </div>
-  )
-}
-
-/* ===== STYLE ===== */
-
+/* STYLE */
 const cardWrap = {
   display: 'grid',
   gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
@@ -171,7 +134,6 @@ const card = {
 const cardTitle = {
   fontSize: 12,
   textTransform: 'uppercase',
-  letterSpacing: 1,
   color: '#64748b',
   marginBottom: 8,
   fontWeight: 700
@@ -194,11 +156,4 @@ const chartCard = {
   borderRadius: 16,
   padding: 20,
   boxShadow: '0 10px 25px rgba(0,0,0,0.05)'
-}
-
-const chartTitle = {
-  fontSize: 14,
-  fontWeight: 700,
-  marginBottom: 12,
-  color: '#0f172a'
 }

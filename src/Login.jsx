@@ -1,17 +1,26 @@
 import { useState } from 'react'
-import { signInWithEmailAndPassword } from 'firebase/auth'
-import { auth } from './firebase'
+import { loginWithEmail } from './services/auth.service'
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   const login = async () => {
+    setError('')
+    setLoading(true)
+
     try {
-      await signInWithEmailAndPassword(auth, email, password)
-    } catch {
-      setError('Email atau password salah')
+      await loginWithEmail(email, password)
+    } catch (err) {
+      if (err.message === 'EMPTY_CREDENTIAL') {
+        setError('Email dan password wajib diisi')
+      } else {
+        setError('Email atau password salah')
+      }
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -37,7 +46,9 @@ export default function Login() {
 
       <br />
 
-      <button onClick={login}>Login</button>
+      <button onClick={login} disabled={loading}>
+        {loading ? 'Loading...' : 'Login'}
+      </button>
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
     </div>

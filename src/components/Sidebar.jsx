@@ -15,114 +15,42 @@ export default function Sidebar({ page, setPage }) {
     <aside className="sidebar">
       <nav>
         <button
-          className={page === 'dashboard' ? 'active' : ''}
+          className={`item ${page === 'dashboard' ? 'active' : ''}`}
           onClick={() => setPage('dashboard')}
         >
-          <LayoutDashboard size={ICON_SIZE} className="icon" />
+          <LayoutDashboard size={ICON_SIZE} />
           <span>Dashboard</span>
         </button>
 
         <button
-          className={page === 'projects' ? 'active' : ''}
+          className={`item ${page === 'projects' ? 'active' : ''}`}
           onClick={() => setPage('projects')}
         >
-          <FolderKanban size={ICON_SIZE} className="icon" />
+          <FolderKanban size={ICON_SIZE} />
           <span>Proyek</span>
         </button>
 
         <button
-          className={page === 'history' ? 'active' : ''}
+          className={`item ${page === 'history' ? 'active' : ''}`}
           onClick={() => setPage('history')}
         >
-          <History size={ICON_SIZE} className="icon" />
+          <History size={ICON_SIZE} />
           <span>Histori</span>
         </button>
 
         <button
-          className={page === 'archives' ? 'active' : ''}
+          className={`item ${page === 'archives' ? 'active' : ''}`}
           onClick={() => setPage('archives')}
         >
-          <Archive size={ICON_SIZE} className="icon" />
+          <Archive size={ICON_SIZE} />
           <span>Arsip</span>
         </button>
       </nav>
 
-      <button className="logout" onClick={() => signOut(auth)}>
-        <LogOut size={ICON_SIZE} className="icon" />
+      <button className="item logout" onClick={() => signOut(auth)}>
+        <LogOut size={ICON_SIZE} />
         <span>Logout</span>
       </button>
-
-      <style>{`
-        .sidebar {
-          height: 100vh;
-          width: 64px;
-          background: #0f172a;
-          color: #94a3b8; /* warna icon & text default */
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-          padding: 12px 6px;
-          transition: width 0.25s ease;
-          overflow: hidden;
-        }
-
-        .sidebar:hover {
-          width: 220px;
-        }
-
-        nav {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-
-        button {
-          all: unset;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 10px;
-          border-radius: 10px;
-          cursor: pointer;
-          font-size: 14px;
-          white-space: nowrap;
-          color: inherit; /* icon ikut warna text */
-        }
-
-        .icon {
-          min-width: ${ICON_SIZE}px;
-          flex-shrink: 0;
-        }
-
-        button:hover {
-          background: rgba(255,255,255,0.08);
-          color: #ffffff;
-        }
-
-        .active {
-          background: rgba(255,255,255,0.15);
-          color: #ffffff;
-          font-weight: 600;
-        }
-
-        button span {
-          opacity: 0;
-          transition: opacity 0.15s ease;
-        }
-
-        .sidebar:hover button span {
-          opacity: 1;
-        }
-
-        .logout {
-          color: #fca5a5;
-        }
-
-        .logout:hover {
-          background: rgba(248,113,113,0.15);
-          color: #ffffff;
-        }
-      `}</style>
     </aside>
   )
 }

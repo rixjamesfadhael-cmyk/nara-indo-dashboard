@@ -1,0 +1,89 @@
+[33mcommit dfd604dbd8ddc3ef46a0221b07ad76f941c391b4[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeature-next[m[33m, [m[1;31morigin/feature-next[m[33m)[m
+Author: rixjamesfadhael-cmyk <rixjames.fadhael@gmail.com>
+Date:   Mon Jan 26 00:14:03 2026 +0700
+
+    wip: simpan progress workflow proyek (konsultan/perencanaan/pengawasan)
+
+[33mcommit bed5ccce0b09a7f9aaefd100f8dfe3419393cec0[m
+Author: rixjamesfadhael-cmyk <rixjames.fadhael@gmail.com>
+Date:   Sun Jan 25 18:47:56 2026 +0700
+
+    WIP: form proyek bertahap & struktur tahap (pending refinement)
+
+[33mcommit c4fd04b898bc8b56e02da4d6cbfabed61427478b[m[33m ([m[1;31morigin/main[m[33m, [m[1;32mmain[m[33m)[m
+Author: rixjamesfadhael-cmyk <rixjames.fadhael@gmail.com>
+Date:   Fri Jan 23 23:38:31 2026 +0700
+
+    fix: force page remount to prevent overlay blocking archive view
+
+[33mcommit e35cb01ee4bee3132c4449c64631ea6d2e5a3f70[m[33m ([m[1;32mfeature-arsip-v2[m[33m)[m
+Author: rixjamesfadhael-cmyk <rixjames.fadhael@gmail.com>
+Date:   Fri Jan 23 21:04:05 2026 +0700
+
+    checkpoint: sebelum perbaikan idempotent arsip-proyek
+
+[33mcommit 94638925f7fc69fc6903700230c39e404bfdd9a8[m
+Author: rixjamesfadhael-cmyk <rixjames.fadhael@gmail.com>
+Date:   Wed Jan 21 16:49:31 2026 +0700
+
+    rollback to last stable version
+
+[33mcommit 6fde6a3d77b589e6daad552ce9496616d7646966[m
+Author: rixjamesfadhael-cmyk <rixjames.fadhael@gmail.com>
+Date:   Wed Jan 21 15:51:58 2026 +0700
+
+    fix: stable project page + realtime activity logging
+
+[33mcommit fc1ef4123823aef424561c8179251f2cdf252a58[m
+Author: rixjamesfadhael-cmyk <rixjames.fadhael@gmail.com>
+Date:   Wed Jan 21 14:05:45 2026 +0700
+
+    add search & filter project (stable)
+
+[33mcommit 7349e4c1604ed0799c17f3cb2d1037a17c2ab27a[m
+Author: rixjamesfadhael-cmyk <rixjames.fadhael@gmail.com>
+Date:   Wed Jan 21 14:00:54 2026 +0700
+
+    fix project page + export excel pdf (stable)
+
+[33mcommit 997973852f93adb70e0ed04f8a04e2de509b8c97[m
+Author: rixjamesfadhael-cmyk <rixjames.fadhael@gmail.com>
+Date:   Wed Jan 21 13:49:03 2026 +0700
+
+    dashboard real data (stable)
+
+[33mcommit 63313617539a41ecdf81f22b95b68f6ae6d4aa32[m
+Author: rixjamesfadhael-cmyk <rixjames.fadhael@gmail.com>
+Date:   Sat Jan 3 19:07:11 2026 +0700
+
+    restore add project button without breaking existing features
+
+[33mcommit 48fd015057dece89d7d2c9db5e5b8621b2c5db83[m
+Author: rixjamesfadhael-cmyk <rixjames.fadhael@gmail.com>
+Date:   Sat Jan 3 18:59:13 2026 +0700
+
+    finalize history page (stable)
+
+[33mcommit 30bc1b8321044e99d4e8810ccd6ff97b622913aa[m[33m ([m[1;33mtag: [m[1;33mui-final-stable[m[33m)[m
+Author: rixjamesfadhael-cmyk <rixjames.fadhael@gmail.com>
+Date:   Sat Jan 3 18:34:50 2026 +0700
+
+    STABLE UI FINAL - sidebar hover collapse & project layout OK
+
+[33mcommit 1365c2f1e3b9d7438b44e13918ac8e61750183c4[m
+Author: rixjamesfadhael-cmyk <rixjames.fadhael@gmail.com>
+Date:   Sat Jan 3 17:39:18 2026 +0700
+
+    final: role admin, export excel/pdf, dark mode, ready production
+
+[33mcommit 1b8ebfb01a6e9998ceae0a13a4e4d0d3aed465ed[m
+Author: rixjamesfadhael-cmyk <rixjames.fadhael@gmail.com>
+Date:   Tue Dec 30 23:21:44 2025 +0700
+
+    sync firebase web app config
+
+[33mcommit 02f68ad3fb2627e5e3cd570b7ab12bcb6a6fa977[m
+Author: rixjamesfadhael-cmyk <rixjames.fadhael@gmail.com>
+Date:   Tue Dec 30 22:09:10 2025 +0700
+
+    first upload
