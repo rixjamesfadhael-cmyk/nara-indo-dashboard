@@ -152,6 +152,13 @@ const hitungStatusWaktu = p => {
   }
 }
 
+/* ===== INJECT: LOCK TAHAPAN ===== */
+
+const isStepLocked = (workflow, index) => {
+  if (index === 0) return false
+  return Number(workflow[index - 1]?.progress || 0) < 100
+}
+
 /* ================= COMPONENT ================= */
 
 export default function Proyek({ role }) {
@@ -212,14 +219,7 @@ export default function Proyek({ role }) {
 
     autoTable(pdf, {
       startY: 20,
-      head: [[
-        'No',
-        'Nama',
-        'Instansi',
-        'Lokasi',
-        'Nilai',
-        'Progress'
-      ]],
+      head: [['No', 'Nama', 'Instansi', 'Lokasi', 'Nilai', 'Progress']],
       body: projects.map((p, i) => [
         i + 1,
         p.name,
@@ -421,6 +421,7 @@ export default function Proyek({ role }) {
                     <input
                       type="number"
                       value={s.progress}
+                      disabled={isStepLocked(workflow, i)}
                       onChange={e =>
                         updateDraft(p.id, i, e.target.value)
                       }
