@@ -152,7 +152,7 @@ const hitungStatusWaktu = p => {
   }
 }
 
-/* ===== INJECT: LOCK TAHAPAN ===== */
+/* ===== LOCK TAHAPAN ===== */
 
 const isStepLocked = (workflow, index) => {
   if (index === 0) return false
@@ -166,6 +166,13 @@ export default function Proyek({ role }) {
   const [adding, setAdding] = useState(false)
   const [expanded, setExpanded] = useState(null)
   const [drafts, setDrafts] = useState({})
+
+  /* === EDIT KONTRAK (FITUR BARU) === */
+  const [editingKontrak, setEditingKontrak] = useState(null)
+  const [kontrakDraft, setKontrakDraft] = useState({
+    tanggalMulai: '',
+    durasiHari: ''
+  })
 
   const [form, setForm] = useState({
     name: '',
@@ -298,6 +305,23 @@ export default function Proyek({ role }) {
     setExpanded(null)
   }
 
+  /* === SIMPAN KONTRAK === */
+
+  const simpanKontrak = async p => {
+    const tanggalSelesai = hitungTanggalSelesai(
+      kontrakDraft.tanggalMulai,
+      kontrakDraft.durasiHari
+    )
+
+    await updateDoc(doc(db, 'projects', p.id), {
+      tanggalMulai: kontrakDraft.tanggalMulai,
+      durasiHari: Number(kontrakDraft.durasiHari),
+      tanggalSelesai
+    })
+
+    setEditingKontrak(null)
+  }
+
   /* ================= RENDER ================= */
 
   return (
@@ -402,6 +426,20 @@ export default function Proyek({ role }) {
                   <button onClick={() => editing ? setExpanded(null) : bukaTahapan(p)}>
                     {editing ? 'Tutup Tahapan' : 'Update Tahapan'}
                   </button>
+
+                  <button
+                    style={{ marginLeft: 8 }}
+                    onClick={() => {
+                      setEditingKontrak(p.id)
+                      setKontrakDraft({
+                        tanggalMulai: p.tanggalMulai,
+                        durasiHari: p.durasiHari
+                      })
+                    }}
+                  >
+                    Edit Kontrak
+                  </button>
+
                   <button
                     style={{ marginLeft: 8 }}
                     onClick={() =>
@@ -412,6 +450,34 @@ export default function Proyek({ role }) {
                     Hapus
                   </button>
                 </>
+              )}
+
+              {editingKontrak === p.id && (
+                <div style={{ marginTop: 12 }}>
+                  <input
+                    type="date"
+                    value={kontrakDraft.tanggalMulai}
+                    onChange={e =>
+                      setKontrakDraft({
+                        ...kontrakDraft,
+                        tanggalMulai: e.target.value
+                      })
+                    }
+                  />
+                  <input
+                    type="number"
+                    value={kontrakDraft.durasiHari}
+                    onChange={e =>
+                      setKontrakDraft({
+                        ...kontrakDraft,
+                        durasiHari: e.target.value
+                      })
+                    }
+                  />
+                  <button onClick={() => simpanKontrak(p)}>
+                    Simpan Kontrak
+                  </button>
+                </div>
               )}
 
               {editing &&

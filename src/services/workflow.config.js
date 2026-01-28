@@ -5,22 +5,20 @@ export const WORKFLOW_CONFIG = {
       perencanaan: {
         label: 'Perencanaan',
         steps: [
-          'Persiapan & Pengumpulan Data',
-          'Survey & Investigasi Lapangan',
-          'Analisis Teknis',
-          'Penyusunan Dokumen Perencanaan',
-          'Review & Revisi',
-          'Penyerahan Dokumen Perencanaan'
+          'Survei & Pengumpulan Data',
+          'Penyusunan KAK',
+          'DED / Gambar Teknis',
+          'RAB & Spesifikasi Teknis'
         ]
       },
       pengawasan: {
         label: 'Pengawasan',
         steps: [
           'Persiapan Pengawasan',
-          'Monitoring Pelaksanaan Pekerjaan',
-          'Pelaporan Berkala',
-          'Evaluasi & Rekomendasi',
-          'Laporan Akhir Pengawasan'
+          'Pengawasan Pelaksanaan',
+          'Pelaporan & Evaluasi',
+          'Pengendalian & Koordinasi',
+          'Serah Terima & Akhir Kontrak'
         ]
       }
     }
@@ -28,25 +26,38 @@ export const WORKFLOW_CONFIG = {
 
   konstruksi: {
     label: 'Konstruksi',
-    subs: null,
     steps: [
-      'Persiapan Pelaksanaan',
-      'Pelaksanaan Pekerjaan Fisik',
-      'Pengendalian Mutu & Waktu',
+      'Persiapan Pekerjaan',
+      'Pelaksanaan Pekerjaan',
+      'Pengendalian Proyek',
       'Penyelesaian Pekerjaan',
-      'Serah Terima Pekerjaan (PHO/FHO)'
+      'Serah Terima Pekerjaan'
     ]
   },
 
   pengadaan: {
     label: 'Pengadaan',
-    subs: null,
-    steps: [
-      'Persiapan Pengadaan',
-      'Proses Pemilihan Penyedia',
-      'Evaluasi & Penetapan',
-      'Kontrak & Pelaksanaan',
-      'Serah Terima Barang/Jasa'
-    ]
+    subs: {
+      barang: {
+        label: 'Barang',
+        steps: [
+          'Perencanaan Pengadaan',
+          'Pemilihan Penyedia',
+          'Kontrak',
+          'Pelaksanaan Pengadaan',
+          'Serah Terima Barang'
+        ]
+      },
+      jasa: {
+        label: 'Jasa',
+        steps: [
+          'Perencanaan Pengadaan',
+          'Pemilihan Penyedia',
+          'Kontrak',
+          'Pelaksanaan Jasa',
+          'Serah Terima Jasa'
+        ]
+      }
+    }
   }
 }
