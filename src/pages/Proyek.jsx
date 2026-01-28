@@ -74,15 +74,6 @@ const WORKFLOW_CONFIG = {
   }
 }
 
-const PAYMENT_STATUS = [
-  'Belum Bayar',
-  'DP',
-  'Termin 1',
-  'Termin 2',
-  'Termin 3',
-  'Pelunasan'
-]
-
 /* ================= HELPERS ================= */
 
 const safeWorkflow = wf => (Array.isArray(wf) ? wf : [])
@@ -118,6 +109,43 @@ const hitungTanggalSelesai = (mulai, durasi) => {
   const d = new Date(mulai)
   d.setDate(d.getDate() + Number(durasi))
   return d.toISOString().slice(0, 10)
+}
+
+/* ===== STATUS WAKTU (TAHAP 1) ===== */
+
+const hitungStatusWaktu = p => {
+  if (!p.tanggalSelesai || !p.durasiHari) {
+    return { label: '-', info: '' }
+  }
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const end = new Date(p.tanggalSelesai)
+  end.setHours(0, 0, 0, 0)
+
+  const sisaHari = Math.ceil(
+    (end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+  )
+
+  if (calcProgress(p.workflow) >= 100) {
+    return { label: '✅ Selesai', info: '' }
+  }
+
+  const batasKritis = Math.ceil(p.durasiHari * 0.2)
+
+  if (sisaHari > batasKritis) {
+    return { label: '🟢 Aman', info: `Sisa ${sisaHari} hari` }
+  }
+
+  if (sisaHari > 0) {
+    return { label: '🟡 Kritis', info: `Sisa ${sisaHari} hari` }
+  }
+
+  return {
+    label: '🔴 Terlambat',
+    info: `Terlambat ${Math.abs(sisaHari)} hari`
+  }
 }
 
 /* ================= COMPONENT ================= */
@@ -313,14 +341,15 @@ export default function Proyek({ role }) {
         {projects.map(p => {
           const editing = expanded === p.id
           const workflow = editing ? drafts[p.id] : p.workflow
+          const status = hitungStatusWaktu(p)
 
           return (
             <div key={p.id} style={{ background: '#fff', padding: 16, marginBottom: 16 }}>
               <strong>{p.name}</strong>
               <div>{p.instansi} — {p.lokasi}</div>
-              <div>
-                Kontrak: {p.tanggalMulai} → {p.tanggalSelesai}
-              </div>
+              <div>Kontrak: {p.tanggalMulai} → {p.tanggalSelesai}</div>
+              <div>Status Waktu: <strong>{status.label}</strong></div>
+              {status.info && <div>{status.info}</div>}
               <div>Progress: {calcProgress(workflow)}%</div>
 
               {role === 'admin' && (
