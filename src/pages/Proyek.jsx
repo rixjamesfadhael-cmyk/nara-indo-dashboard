@@ -28,41 +28,48 @@ const WORKFLOW_CONFIG = {
       pengawasan: {
         label: 'Pengawasan',
         steps: [
-          'Laporan Mingguan',
-          'Laporan Bulanan',
-          'Laporan Akhir'
+          'Persiapan Pengawasan',
+          'Pengawasan Pelaksanaan',
+          'Pelaporan & Evaluasi',
+          'Pengendalian & Koordinasi',
+          'Serah Terima & Akhir Kontrak'
         ]
       }
     }
   },
+
   konstruksi: {
     label: 'Konstruksi',
     steps: [
-      'Persiapan',
-      'Pelaksanaan',
-      'Pemeliharaan',
-      'Serah Terima'
+      'Persiapan Pekerjaan',
+      'Pelaksanaan Pekerjaan',
+      'Pengendalian Proyek',
+      'Penyelesaian Pekerjaan',
+      'Serah Terima Pekerjaan'
     ]
   },
+
   pengadaan: {
     label: 'Pengadaan',
     subs: {
       barang: {
         label: 'Barang',
         steps: [
-          'Perencanaan',
+          'Perencanaan Pengadaan',
           'Pemilihan Penyedia',
           'Kontrak',
-          'Serah Terima'
+          'Pelaksanaan Pengadaan',
+          'Serah Terima Barang'
         ]
       },
       jasa: {
         label: 'Jasa',
         steps: [
-          'Perencanaan',
+          'Perencanaan Pengadaan',
           'Pemilihan Penyedia',
-          'Pelaksanaan',
-          'Serah Terima'
+          'Kontrak',
+          'Pelaksanaan Jasa',
+          'Serah Terima Jasa'
         ]
       }
     }
@@ -80,9 +87,7 @@ const PAYMENT_STATUS = [
 
 /* ================= SAFE HELPERS ================= */
 
-// ⛔ AMAN walau workflow undefined / salah format
-const safeWorkflow = wf =>
-  Array.isArray(wf) ? wf : []
+const safeWorkflow = wf => (Array.isArray(wf) ? wf : [])
 
 const calcProgress = wf => {
   const workflow = safeWorkflow(wf)
@@ -93,12 +98,28 @@ const calcProgress = wf => {
   )
 }
 
-// ⛔ NORMALISASI DATA LAMA
 const normalizeProject = p => ({
   ...p,
   workflow: safeWorkflow(p.workflow),
   paymentStatus: p.paymentStatus || 'Belum Bayar'
 })
+
+const buildWorkflow = (division, subDivision) => {
+  const cfg = WORKFLOW_CONFIG[division]
+  if (!cfg) return []
+
+  const steps = cfg.subs
+    ? cfg.subs[subDivision]?.steps || []
+    : cfg.steps
+
+  return steps.map(s => ({ label: s, progress: 0 }))
+}
+
+const isWorkflowOutdated = project => {
+  const current = safeWorkflow(project.workflow)
+  const fresh = buildWorkflow(project.division, project.subDivision)
+  return fresh.length > 0 && current.length !== fresh.length
+}
 
 /* ================= COMPONENT ================= */
 
@@ -126,22 +147,6 @@ export default function Proyek({ role }) {
       )
     })
   }, [])
-
-  /* ================= WORKFLOW BUILDER ================= */
-
-  const buildWorkflow = (div, sub) => {
-    const cfg = WORKFLOW_CONFIG[div]
-    if (!cfg) return []
-
-    const steps = cfg.subs
-      ? cfg.subs[sub]?.steps || []
-      : cfg.steps
-
-    return steps.map(s => ({
-      label: s,
-      progress: 0
-    }))
-  }
 
   /* ================= CREATE ================= */
 
@@ -195,6 +200,24 @@ export default function Proyek({ role }) {
       progress: calcProgress(wf)
     })
     setExpanded(null)
+  }
+
+  /* ================= UPGRADE WORKFLOW ================= */
+
+  const upgradeWorkflow = async p => {
+    if (
+      !confirm(
+        'Workflow akan diperbarui ke versi terbaru dan progress akan direset. Lanjutkan?'
+      )
+    )
+      return
+
+    const wf = buildWorkflow(p.division, p.subDivision)
+
+    await updateDoc(doc(db, 'projects', p.id), {
+      workflow: wf,
+      progress: 0
+    })
   }
 
   /* ================= RENDER ================= */
@@ -278,9 +301,8 @@ export default function Proyek({ role }) {
       <div style={{ marginTop: 24 }}>
         {projects.map(p => {
           const editing = expanded === p.id
-          const workflow = editing
-            ? drafts[p.id]
-            : p.workflow
+          const workflow = editing ? drafts[p.id] : p.workflow
+          const outdated = isWorkflowOutdated(p)
 
           return (
             <div
@@ -316,6 +338,15 @@ export default function Proyek({ role }) {
                   >
                     Hapus
                   </button>
+
+                  {outdated && (
+                    <button
+                      style={{ marginLeft: 8 }}
+                      onClick={() => upgradeWorkflow(p)}
+                    >
+                      🔁 Upgrade Workflow
+                    </button>
+                  )}
                 </>
               )}
 
