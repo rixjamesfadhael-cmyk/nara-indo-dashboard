@@ -37,7 +37,6 @@ const WORKFLOW_CONFIG = {
       }
     }
   },
-
   konstruksi: {
     label: 'Konstruksi',
     steps: [
@@ -48,7 +47,6 @@ const WORKFLOW_CONFIG = {
       'Serah Terima Pekerjaan'
     ]
   },
-
   pengadaan: {
     label: 'Pengadaan',
     subs: {
@@ -85,7 +83,7 @@ const PAYMENT_STATUS = [
   'Pelunasan'
 ]
 
-/* ================= SAFE HELPERS ================= */
+/* ================= HELPERS ================= */
 
 const safeWorkflow = wf => (Array.isArray(wf) ? wf : [])
 
@@ -115,10 +113,11 @@ const buildWorkflow = (division, subDivision) => {
   return steps.map(s => ({ label: s, progress: 0 }))
 }
 
-const isWorkflowOutdated = project => {
-  const current = safeWorkflow(project.workflow)
-  const fresh = buildWorkflow(project.division, project.subDivision)
-  return fresh.length > 0 && current.length !== fresh.length
+const hitungTanggalSelesai = (mulai, durasi) => {
+  if (!mulai || !durasi) return ''
+  const d = new Date(mulai)
+  d.setDate(d.getDate() + Number(durasi))
+  return d.toISOString().slice(0, 10)
 }
 
 /* ================= COMPONENT ================= */
@@ -131,6 +130,13 @@ export default function Proyek({ role }) {
 
   const [form, setForm] = useState({
     name: '',
+    instansi: '',
+    lokasi: '',
+    sumberDana: '',
+    nilaiAnggaran: '',
+    tahunAnggaran: '',
+    tanggalMulai: '',
+    durasiHari: '',
     division: '',
     subDivision: '',
     paymentStatus: 'Belum Bayar'
@@ -156,13 +162,17 @@ export default function Proyek({ role }) {
       return
     }
 
-    const workflow = buildWorkflow(
-      form.division,
-      form.subDivision
+    const workflow = buildWorkflow(form.division, form.subDivision)
+    const tanggalSelesai = hitungTanggalSelesai(
+      form.tanggalMulai,
+      form.durasiHari
     )
 
     await addDoc(collection(db, 'projects'), {
       ...form,
+      nilaiAnggaran: Number(form.nilaiAnggaran),
+      durasiHari: Number(form.durasiHari),
+      tanggalSelesai,
       workflow,
       progress: calcProgress(workflow),
       createdAt: serverTimestamp()
@@ -170,6 +180,13 @@ export default function Proyek({ role }) {
 
     setForm({
       name: '',
+      instansi: '',
+      lokasi: '',
+      sumberDana: '',
+      nilaiAnggaran: '',
+      tahunAnggaran: '',
+      tanggalMulai: '',
+      durasiHari: '',
       division: '',
       subDivision: '',
       paymentStatus: 'Belum Bayar'
@@ -202,24 +219,6 @@ export default function Proyek({ role }) {
     setExpanded(null)
   }
 
-  /* ================= UPGRADE WORKFLOW ================= */
-
-  const upgradeWorkflow = async p => {
-    if (
-      !confirm(
-        'Workflow akan diperbarui ke versi terbaru dan progress akan direset. Lanjutkan?'
-      )
-    )
-      return
-
-    const wf = buildWorkflow(p.division, p.subDivision)
-
-    await updateDoc(doc(db, 'projects', p.id), {
-      workflow: wf,
-      progress: 0
-    })
-  }
-
   /* ================= RENDER ================= */
 
   return (
@@ -236,22 +235,51 @@ export default function Proyek({ role }) {
         <div style={{ marginTop: 16, background: '#fff', padding: 16 }}>
           <h3>Tambah Proyek</h3>
 
-          <input
-            placeholder="Nama Proyek"
+          <input placeholder="Nama Proyek"
             value={form.name}
-            onChange={e =>
-              setForm({ ...form, name: e.target.value })
-            }
-          />
+            onChange={e => setForm({ ...form, name: e.target.value })} />
+
+          <input placeholder="Instansi"
+            value={form.instansi}
+            onChange={e => setForm({ ...form, instansi: e.target.value })} />
+
+          <input placeholder="Lokasi"
+            value={form.lokasi}
+            onChange={e => setForm({ ...form, lokasi: e.target.value })} />
+
+          <input placeholder="Sumber Dana"
+            value={form.sumberDana}
+            onChange={e => setForm({ ...form, sumberDana: e.target.value })} />
+
+          <input type="number" placeholder="Nilai Anggaran"
+            value={form.nilaiAnggaran}
+            onChange={e => setForm({ ...form, nilaiAnggaran: e.target.value })} />
+
+          <input type="number" placeholder="Tahun Anggaran"
+            value={form.tahunAnggaran}
+            onChange={e => setForm({ ...form, tahunAnggaran: e.target.value })} />
+
+          <input type="date"
+            value={form.tanggalMulai}
+            onChange={e => setForm({ ...form, tanggalMulai: e.target.value })} />
+
+          <input type="number" placeholder="Durasi (hari)"
+            value={form.durasiHari}
+            onChange={e => setForm({ ...form, durasiHari: e.target.value })} />
+
+          {form.tanggalMulai && form.durasiHari && (
+            <div>
+              Tanggal Selesai:{' '}
+              <strong>
+                {hitungTanggalSelesai(form.tanggalMulai, form.durasiHari)}
+              </strong>
+            </div>
+          )}
 
           <select
             value={form.division}
             onChange={e =>
-              setForm({
-                ...form,
-                division: e.target.value,
-                subDivision: ''
-              })
+              setForm({ ...form, division: e.target.value, subDivision: '' })
             }
           >
             <option value="">-- Pilih Divisi --</option>
@@ -265,10 +293,7 @@ export default function Proyek({ role }) {
               <select
                 value={form.subDivision}
                 onChange={e =>
-                  setForm({
-                    ...form,
-                    subDivision: e.target.value
-                  })
+                  setForm({ ...form, subDivision: e.target.value })
                 }
               >
                 <option value="">-- Pilih Sub --</option>
@@ -280,20 +305,6 @@ export default function Proyek({ role }) {
               </select>
             )}
 
-          <select
-            value={form.paymentStatus}
-            onChange={e =>
-              setForm({
-                ...form,
-                paymentStatus: e.target.value
-              })
-            }
-          >
-            {PAYMENT_STATUS.map(s => (
-              <option key={s}>{s}</option>
-            ))}
-          </select>
-
           <button onClick={simpanProyek}>Simpan</button>
         </div>
       )}
@@ -302,52 +313,20 @@ export default function Proyek({ role }) {
         {projects.map(p => {
           const editing = expanded === p.id
           const workflow = editing ? drafts[p.id] : p.workflow
-          const outdated = isWorkflowOutdated(p)
 
           return (
-            <div
-              key={p.id}
-              style={{
-                background: '#fff',
-                padding: 16,
-                marginBottom: 16
-              }}
-            >
+            <div key={p.id} style={{ background: '#fff', padding: 16, marginBottom: 16 }}>
               <strong>{p.name}</strong>
-              <div>Status Pembayaran: {p.paymentStatus}</div>
-              <div>Progress Total: {calcProgress(workflow)}%</div>
+              <div>{p.instansi} — {p.lokasi}</div>
+              <div>
+                Kontrak: {p.tanggalMulai} → {p.tanggalSelesai}
+              </div>
+              <div>Progress: {calcProgress(workflow)}%</div>
 
               {role === 'admin' && (
-                <>
-                  <button
-                    onClick={() =>
-                      editing
-                        ? setExpanded(null)
-                        : bukaTahapan(p)
-                    }
-                  >
-                    {editing
-                      ? 'Tutup Tahapan'
-                      : 'Update Tahapan'}
-                  </button>
-
-                  <button
-                    onClick={() =>
-                      deleteDoc(doc(db, 'projects', p.id))
-                    }
-                  >
-                    Hapus
-                  </button>
-
-                  {outdated && (
-                    <button
-                      style={{ marginLeft: 8 }}
-                      onClick={() => upgradeWorkflow(p)}
-                    >
-                      🔁 Upgrade Workflow
-                    </button>
-                  )}
-                </>
+                <button onClick={() => editing ? setExpanded(null) : bukaTahapan(p)}>
+                  {editing ? 'Tutup Tahapan' : 'Update Tahapan'}
+                </button>
               )}
 
               {editing &&
@@ -356,8 +335,6 @@ export default function Proyek({ role }) {
                     <small>{s.label}</small>
                     <input
                       type="number"
-                      min="0"
-                      max="100"
                       value={s.progress}
                       onChange={e =>
                         updateDraft(p.id, i, e.target.value)
@@ -366,7 +343,7 @@ export default function Proyek({ role }) {
                   </div>
                 ))}
 
-              {editing && role === 'admin' && (
+              {editing && (
                 <button onClick={() => simpanTahapan(p)}>
                   Simpan Progress
                 </button>
