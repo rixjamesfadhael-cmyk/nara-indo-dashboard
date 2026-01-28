@@ -10,6 +10,10 @@ import {
 } from 'firebase/firestore'
 import { db } from '../firebase'
 
+import * as XLSX from 'xlsx'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
+
 /* ================= CONFIG ================= */
 
 const WORKFLOW_CONFIG = {
@@ -111,7 +115,7 @@ const hitungTanggalSelesai = (mulai, durasi) => {
   return d.toISOString().slice(0, 10)
 }
 
-/* ===== STATUS WAKTU (TAHAP 1) ===== */
+/* ===== STATUS WAKTU ===== */
 
 const hitungStatusWaktu = p => {
   if (!p.tanggalSelesai || !p.durasiHari) {
@@ -181,6 +185,53 @@ export default function Proyek({ role }) {
       )
     })
   }, [])
+
+  /* ================= EXPORT ================= */
+
+  const exportExcel = () => {
+    const rows = projects.map((p, i) => ({
+      No: i + 1,
+      Nama: p.name,
+      Instansi: p.instansi,
+      Lokasi: p.lokasi,
+      SumberDana: p.sumberDana,
+      NilaiAnggaran: p.nilaiAnggaran,
+      TahunAnggaran: p.tahunAnggaran,
+      Progress: `${calcProgress(p.workflow)}%`
+    }))
+
+    const ws = XLSX.utils.json_to_sheet(rows)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Proyek')
+    XLSX.writeFile(wb, 'daftar-proyek.xlsx')
+  }
+
+  const exportPDF = () => {
+    const pdf = new jsPDF()
+    pdf.text('Daftar Proyek', 14, 15)
+
+    autoTable(pdf, {
+      startY: 20,
+      head: [[
+        'No',
+        'Nama',
+        'Instansi',
+        'Lokasi',
+        'Nilai',
+        'Progress'
+      ]],
+      body: projects.map((p, i) => [
+        i + 1,
+        p.name,
+        p.instansi,
+        p.lokasi,
+        p.nilaiAnggaran,
+        `${calcProgress(p.workflow)}%`
+      ])
+    })
+
+    pdf.save('daftar-proyek.pdf')
+  }
 
   /* ================= CREATE ================= */
 
@@ -253,6 +304,13 @@ export default function Proyek({ role }) {
     <div>
       <h2>Manajemen Proyek</h2>
 
+      <div style={{ marginBottom: 12 }}>
+        <button onClick={exportExcel}>Export Excel</button>
+        <button onClick={exportPDF} style={{ marginLeft: 8 }}>
+          Export PDF
+        </button>
+      </div>
+
       {role === 'admin' && (
         <button onClick={() => setAdding(a => !a)}>
           {adding ? 'Batal Tambah Proyek' : '+ Tambah Proyek'}
@@ -263,36 +321,28 @@ export default function Proyek({ role }) {
         <div style={{ marginTop: 16, background: '#fff', padding: 16 }}>
           <h3>Tambah Proyek</h3>
 
-          <input placeholder="Nama Proyek"
-            value={form.name}
+          <input placeholder="Nama Proyek" value={form.name}
             onChange={e => setForm({ ...form, name: e.target.value })} />
 
-          <input placeholder="Instansi"
-            value={form.instansi}
+          <input placeholder="Instansi" value={form.instansi}
             onChange={e => setForm({ ...form, instansi: e.target.value })} />
 
-          <input placeholder="Lokasi"
-            value={form.lokasi}
+          <input placeholder="Lokasi" value={form.lokasi}
             onChange={e => setForm({ ...form, lokasi: e.target.value })} />
 
-          <input placeholder="Sumber Dana"
-            value={form.sumberDana}
+          <input placeholder="Sumber Dana" value={form.sumberDana}
             onChange={e => setForm({ ...form, sumberDana: e.target.value })} />
 
-          <input type="number" placeholder="Nilai Anggaran"
-            value={form.nilaiAnggaran}
+          <input type="number" placeholder="Nilai Anggaran" value={form.nilaiAnggaran}
             onChange={e => setForm({ ...form, nilaiAnggaran: e.target.value })} />
 
-          <input type="number" placeholder="Tahun Anggaran"
-            value={form.tahunAnggaran}
+          <input type="number" placeholder="Tahun Anggaran" value={form.tahunAnggaran}
             onChange={e => setForm({ ...form, tahunAnggaran: e.target.value })} />
 
-          <input type="date"
-            value={form.tanggalMulai}
+          <input type="date" value={form.tanggalMulai}
             onChange={e => setForm({ ...form, tanggalMulai: e.target.value })} />
 
-          <input type="number" placeholder="Durasi (hari)"
-            value={form.durasiHari}
+          <input type="number" placeholder="Durasi (hari)" value={form.durasiHari}
             onChange={e => setForm({ ...form, durasiHari: e.target.value })} />
 
           {form.tanggalMulai && form.durasiHari && (
@@ -304,8 +354,7 @@ export default function Proyek({ role }) {
             </div>
           )}
 
-          <select
-            value={form.division}
+          <select value={form.division}
             onChange={e =>
               setForm({ ...form, division: e.target.value, subDivision: '' })
             }
@@ -316,22 +365,18 @@ export default function Proyek({ role }) {
             ))}
           </select>
 
-          {form.division &&
-            WORKFLOW_CONFIG[form.division].subs && (
-              <select
-                value={form.subDivision}
-                onChange={e =>
-                  setForm({ ...form, subDivision: e.target.value })
-                }
-              >
-                <option value="">-- Pilih Sub --</option>
-                {Object.entries(
-                  WORKFLOW_CONFIG[form.division].subs
-                ).map(([k, v]) => (
-                  <option key={k} value={k}>{v.label}</option>
-                ))}
-              </select>
-            )}
+          {form.division && WORKFLOW_CONFIG[form.division].subs && (
+            <select value={form.subDivision}
+              onChange={e =>
+                setForm({ ...form, subDivision: e.target.value })
+              }
+            >
+              <option value="">-- Pilih Sub --</option>
+              {Object.entries(WORKFLOW_CONFIG[form.division].subs).map(([k, v]) => (
+                <option key={k} value={k}>{v.label}</option>
+              ))}
+            </select>
+          )}
 
           <button onClick={simpanProyek}>Simpan</button>
         </div>
@@ -353,9 +398,20 @@ export default function Proyek({ role }) {
               <div>Progress: {calcProgress(workflow)}%</div>
 
               {role === 'admin' && (
-                <button onClick={() => editing ? setExpanded(null) : bukaTahapan(p)}>
-                  {editing ? 'Tutup Tahapan' : 'Update Tahapan'}
-                </button>
+                <>
+                  <button onClick={() => editing ? setExpanded(null) : bukaTahapan(p)}>
+                    {editing ? 'Tutup Tahapan' : 'Update Tahapan'}
+                  </button>
+                  <button
+                    style={{ marginLeft: 8 }}
+                    onClick={() =>
+                      confirm('Hapus proyek ini?') &&
+                      deleteDoc(doc(db, 'projects', p.id))
+                    }
+                  >
+                    Hapus
+                  </button>
+                </>
               )}
 
               {editing &&
