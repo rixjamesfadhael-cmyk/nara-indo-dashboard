@@ -167,7 +167,6 @@ export default function Proyek({ role }) {
   const [expanded, setExpanded] = useState(null)
   const [drafts, setDrafts] = useState({})
 
-  /* === EDIT KONTRAK (FITUR BARU) === */
   const [editingKontrak, setEditingKontrak] = useState(null)
   const [kontrakDraft, setKontrakDraft] = useState({
     tanggalMulai: '',
@@ -188,8 +187,6 @@ export default function Proyek({ role }) {
     paymentStatus: 'Belum Bayar'
   })
 
-  /* ================= LOAD ================= */
-
   useEffect(() => {
     return onSnapshot(collection(db, 'projects'), snap => {
       setProjects(
@@ -200,44 +197,65 @@ export default function Proyek({ role }) {
     })
   }, [])
 
-  /* ================= EXPORT ================= */
+  /* ================= EXPORT (DIPERLUAS) ================= */
 
   const exportExcel = () => {
-    const rows = projects.map((p, i) => ({
-      No: i + 1,
-      Nama: p.name,
-      Instansi: p.instansi,
-      Lokasi: p.lokasi,
-      SumberDana: p.sumberDana,
-      NilaiAnggaran: p.nilaiAnggaran,
-      TahunAnggaran: p.tahunAnggaran,
-      Progress: `${calcProgress(p.workflow)}%`
-    }))
+    const rows = projects.map((p, i) => {
+      const workflowText = safeWorkflow(p.workflow)
+        .map(s => `${s.label}: ${s.progress}%`)
+        .join(' | ')
+
+      return {
+        No: i + 1,
+        NamaProyek: p.name,
+        Instansi: p.instansi,
+        Lokasi: p.lokasi,
+        SumberDana: p.sumberDana,
+        NilaiAnggaran: p.nilaiAnggaran,
+        TahunAnggaran: p.tahunAnggaran,
+        Divisi: p.division,
+        SubDivisi: p.subDivision || '-',
+        TanggalMulai: p.tanggalMulai,
+        DurasiHari: p.durasiHari,
+        TanggalSelesai: p.tanggalSelesai,
+        StatusWaktu: hitungStatusWaktu(p).label,
+        ProgressTotal: `${calcProgress(p.workflow)}%`,
+        DetailTahapan: workflowText
+      }
+    })
 
     const ws = XLSX.utils.json_to_sheet(rows)
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, 'Proyek')
-    XLSX.writeFile(wb, 'daftar-proyek.xlsx')
+    XLSX.writeFile(wb, 'daftar-proyek-lengkap.xlsx')
   }
 
   const exportPDF = () => {
     const pdf = new jsPDF()
-    pdf.text('Daftar Proyek', 14, 15)
 
-    autoTable(pdf, {
-      startY: 20,
-      head: [['No', 'Nama', 'Instansi', 'Lokasi', 'Nilai', 'Progress']],
-      body: projects.map((p, i) => [
-        i + 1,
-        p.name,
-        p.instansi,
-        p.lokasi,
-        p.nilaiAnggaran,
-        `${calcProgress(p.workflow)}%`
-      ])
+    projects.forEach((p, idx) => {
+      if (idx > 0) pdf.addPage()
+
+      pdf.text(`Nama Proyek: ${p.name}`, 14, 15)
+      pdf.text(`Instansi: ${p.instansi}`, 14, 22)
+      pdf.text(`Lokasi: ${p.lokasi}`, 14, 29)
+      pdf.text(`Sumber Dana: ${p.sumberDana}`, 14, 36)
+      pdf.text(`Nilai Anggaran: ${p.nilaiAnggaran}`, 14, 43)
+      pdf.text(`Kontrak: ${p.tanggalMulai} → ${p.tanggalSelesai}`, 14, 50)
+      pdf.text(`Progress Total: ${calcProgress(p.workflow)}%`, 14, 57)
+      pdf.text(`Status Waktu: ${hitungStatusWaktu(p).label}`, 14, 64)
+
+      autoTable(pdf, {
+        startY: 72,
+        head: [['Tahapan', 'Progress']],
+        body: safeWorkflow(p.workflow).map(s => [
+          s.label,
+          `${s.progress}%`
+        ])
+      })
     })
 
-    pdf.save('daftar-proyek.pdf')
+    pdf.save('daftar-proyek-lengkap.pdf')
   }
 
   /* ================= CREATE ================= */
@@ -304,8 +322,6 @@ export default function Proyek({ role }) {
     })
     setExpanded(null)
   }
-
-  /* === SIMPAN KONTRAK === */
 
   const simpanKontrak = async p => {
     const tanggalSelesai = hitungTanggalSelesai(
