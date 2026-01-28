@@ -197,7 +197,7 @@ export default function Proyek({ role }) {
     })
   }, [])
 
-  /* ================= EXPORT (DIPERLUAS) ================= */
+  /* ================= EXPORT ================= */
 
   const exportExcel = () => {
     const rows = projects.map((p, i) => {
@@ -236,17 +236,30 @@ export default function Proyek({ role }) {
     projects.forEach((p, idx) => {
       if (idx > 0) pdf.addPage()
 
-      pdf.text(`Nama Proyek: ${p.name}`, 14, 15)
-      pdf.text(`Instansi: ${p.instansi}`, 14, 22)
-      pdf.text(`Lokasi: ${p.lokasi}`, 14, 29)
-      pdf.text(`Sumber Dana: ${p.sumberDana}`, 14, 36)
-      pdf.text(`Nilai Anggaran: ${p.nilaiAnggaran}`, 14, 43)
-      pdf.text(`Kontrak: ${p.tanggalMulai} → ${p.tanggalSelesai}`, 14, 50)
-      pdf.text(`Progress Total: ${calcProgress(p.workflow)}%`, 14, 57)
-      pdf.text(`Status Waktu: ${hitungStatusWaktu(p).label}`, 14, 64)
+      autoTable(pdf, {
+        startY: 14,
+        theme: 'grid',
+        head: [['Informasi', 'Detail']],
+        body: [
+          ['Nama Proyek', p.name],
+          ['Instansi', p.instansi],
+          ['Lokasi', p.lokasi],
+          ['Sumber Dana', p.sumberDana],
+          ['Nilai Anggaran', p.nilaiAnggaran],
+          ['Tahun Anggaran', p.tahunAnggaran],
+          ['Divisi', p.division],
+          ['Sub Divisi', p.subDivision || '-'],
+          ['Tanggal Mulai', p.tanggalMulai],
+          ['Durasi (Hari)', p.durasiHari],
+          ['Tanggal Selesai', p.tanggalSelesai],
+          ['Status Waktu', hitungStatusWaktu(p).label],
+          ['Progress Total', `${calcProgress(p.workflow)}%`]
+        ]
+      })
 
       autoTable(pdf, {
-        startY: 72,
+        startY: pdf.lastAutoTable.finalY + 10,
+        theme: 'grid',
         head: [['Tahapan', 'Progress']],
         body: safeWorkflow(p.workflow).map(s => [
           s.label,
@@ -298,7 +311,7 @@ export default function Proyek({ role }) {
     setAdding(false)
   }
 
-  /* ================= EDIT TAHAPAN ================= */
+  /* ================= EDIT TAHAPAN & KONTRAK ================= */
 
   const bukaTahapan = p => {
     setExpanded(p.id)
