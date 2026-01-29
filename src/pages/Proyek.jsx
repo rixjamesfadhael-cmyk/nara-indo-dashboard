@@ -13,155 +13,20 @@ import { db } from '../firebase'
 import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { WORKFLOW_CONFIG } from '../services/workflow.config'
+import {
+  safeWorkflow,
+  calcProgress,
+  normalizeProject,
+  buildWorkflow,
+  hitungTanggalSelesai,
+  isStepLocked
+} from '../utils/project.utils'
+import {
+  hitungStatusWaktu,
+  statusWaktuText
+} from '../utils/timeStatus'
 
-/* ================= CONFIG ================= */
-
-const WORKFLOW_CONFIG = {
-  konsultan: {
-    label: 'Konsultan',
-    subs: {
-      perencanaan: {
-        label: 'Perencanaan',
-        steps: [
-          'Survei & Pengumpulan Data',
-          'Penyusunan KAK',
-          'DED / Gambar Teknis',
-          'RAB & Spesifikasi Teknis'
-        ]
-      },
-      pengawasan: {
-        label: 'Pengawasan',
-        steps: [
-          'Persiapan Pengawasan',
-          'Pengawasan Pelaksanaan',
-          'Pelaporan & Evaluasi',
-          'Pengendalian & Koordinasi',
-          'Serah Terima & Akhir Kontrak'
-        ]
-      }
-    }
-  },
-  konstruksi: {
-    label: 'Konstruksi',
-    steps: [
-      'Persiapan Pekerjaan',
-      'Pelaksanaan Pekerjaan',
-      'Pengendalian Proyek',
-      'Penyelesaian Pekerjaan',
-      'Serah Terima Pekerjaan'
-    ]
-  },
-  pengadaan: {
-    label: 'Pengadaan',
-    subs: {
-      barang: {
-        label: 'Barang',
-        steps: [
-          'Perencanaan Pengadaan',
-          'Pemilihan Penyedia',
-          'Kontrak',
-          'Pelaksanaan Pengadaan',
-          'Serah Terima Barang'
-        ]
-      },
-      jasa: {
-        label: 'Jasa',
-        steps: [
-          'Perencanaan Pengadaan',
-          'Pemilihan Penyedia',
-          'Kontrak',
-          'Pelaksanaan Jasa',
-          'Serah Terima Jasa'
-        ]
-      }
-    }
-  }
-}
-
-/* ================= HELPERS ================= */
-
-const safeWorkflow = wf => (Array.isArray(wf) ? wf : [])
-
-const calcProgress = wf => {
-  const workflow = safeWorkflow(wf)
-  if (workflow.length === 0) return 0
-  return Math.round(
-    workflow.reduce((a, b) => a + (Number(b.progress) || 0), 0) /
-      workflow.length
-  )
-}
-
-const normalizeProject = p => ({
-  ...p,
-  workflow: safeWorkflow(p.workflow),
-  paymentStatus: p.paymentStatus || 'Belum Bayar'
-})
-
-const buildWorkflow = (division, subDivision) => {
-  const cfg = WORKFLOW_CONFIG[division]
-  if (!cfg) return []
-
-  const steps = cfg.subs
-    ? cfg.subs[subDivision]?.steps || []
-    : cfg.steps
-
-  return steps.map(s => ({ label: s, progress: 0 }))
-}
-
-const hitungTanggalSelesai = (mulai, durasi) => {
-  if (!mulai || !durasi) return ''
-  const d = new Date(mulai)
-  d.setDate(d.getDate() + Number(durasi))
-  return d.toISOString().slice(0, 10)
-}
-
-/* ===== STATUS WAKTU ===== */
-
-const hitungStatusWaktu = p => {
-  if (!p.tanggalSelesai || !p.durasiHari) {
-    return { label: '-', info: '' }
-  }
-
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
-  const end = new Date(p.tanggalSelesai)
-  end.setHours(0, 0, 0, 0)
-
-  const sisaHari = Math.ceil(
-    (end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-  )
-
-  if (calcProgress(p.workflow) >= 100) {
-    return { label: '✅ Selesai', info: '' }
-  }
-
-  const batasKritis = Math.ceil(p.durasiHari * 0.2)
-
-  if (sisaHari > batasKritis) {
-    return { label: '🟢 Aman', info: `Sisa ${sisaHari} hari` }
-  }
-
-  if (sisaHari > 0) {
-    return { label: '🟡 Kritis', info: `Sisa ${sisaHari} hari` }
-  }
-
-  return {
-    label: '🔴 Terlambat',
-    info: `Terlambat ${Math.abs(sisaHari)} hari`
-  }
-}
-
-/* ===== LOCK TAHAPAN ===== */
-
-const isStepLocked = (workflow, index) => {
-  if (index === 0) return false
-  return Number(workflow[index - 1]?.progress || 0) < 100
-}
-const statusWaktuText = p => {
-  const label = hitungStatusWaktu(p).label
-  return label.replace(/[^\x00-\x7F]/g, '').trim()
-}
 /* ================= COMPONENT ================= */
 
 export default function Proyek({ role }) {
