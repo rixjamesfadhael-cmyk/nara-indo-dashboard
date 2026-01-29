@@ -13,6 +13,7 @@ import { db } from '../firebase'
 import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { exportExcel, exportPDF } from '../services/project.export'
 import { WORKFLOW_CONFIG } from '../services/workflow.config'
 import {
   safeWorkflow,
@@ -64,80 +65,6 @@ export default function Proyek({ role }) {
       )
     })
   }, [])
-
-  /* ================= EXPORT ================= */
-
-  const exportExcel = () => {
-    const rows = projects.map((p, i) => {
-      const workflowText = safeWorkflow(p.workflow)
-        .map(s => `${s.label}: ${s.progress}%`)
-        .join(' | ')
-
-      return {
-        No: i + 1,
-        NamaProyek: p.name,
-        Instansi: p.instansi,
-        Lokasi: p.lokasi,
-        SumberDana: p.sumberDana,
-        NilaiAnggaran: p.nilaiAnggaran,
-        TahunAnggaran: p.tahunAnggaran,
-        Divisi: p.division,
-        SubDivisi: p.subDivision || '-',
-        TanggalMulai: p.tanggalMulai,
-        DurasiHari: p.durasiHari,
-        TanggalSelesai: p.tanggalSelesai,
-        StatusWaktu: hitungStatusWaktu(p).label,
-        ProgressTotal: `${calcProgress(p.workflow)}%`,
-        DetailTahapan: workflowText
-      }
-    })
-
-    const ws = XLSX.utils.json_to_sheet(rows)
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Proyek')
-    XLSX.writeFile(wb, 'daftar-proyek-lengkap.xlsx')
-  }
-
-  const exportPDF = () => {
-    const pdf = new jsPDF()
-
-    projects.forEach((p, idx) => {
-      if (idx > 0) pdf.addPage()
-
-      autoTable(pdf, {
-        startY: 14,
-        theme: 'grid',
-        head: [['Informasi', 'Detail']],
-        body: [
-          ['Nama Proyek', p.name],
-          ['Instansi', p.instansi],
-          ['Lokasi', p.lokasi],
-          ['Sumber Dana', p.sumberDana],
-          ['Nilai Anggaran', p.nilaiAnggaran],
-          ['Tahun Anggaran', p.tahunAnggaran],
-          ['Divisi', p.division],
-          ['Sub Divisi', p.subDivision || '-'],
-          ['Tanggal Mulai', p.tanggalMulai],
-          ['Durasi (Hari)', p.durasiHari],
-          ['Tanggal Selesai', p.tanggalSelesai],
-          ['Status Waktu', statusWaktuText(p)],
-          ['Progress Total', `${calcProgress(p.workflow)}%`]
-        ]
-      })
-
-      autoTable(pdf, {
-        startY: pdf.lastAutoTable.finalY + 10,
-        theme: 'grid',
-        head: [['Tahapan', 'Progress']],
-        body: safeWorkflow(p.workflow).map(s => [
-          s.label,
-          `${s.progress}%`
-        ])
-      })
-    })
-
-    pdf.save('daftar-proyek-lengkap.pdf')
-  }
 
   /* ================= CREATE ================= */
 
@@ -227,8 +154,8 @@ export default function Proyek({ role }) {
       <h2>Manajemen Proyek</h2>
 
       <div style={{ marginBottom: 12 }}>
-        <button onClick={exportExcel}>Export Excel</button>
-        <button onClick={exportPDF} style={{ marginLeft: 8 }}>
+        <button onClick={() => exportExcel(projects)}>Export Excel</button>
+        <button onClick={() => exportPDF(projects)} style={{ marginLeft: 8 }}>
           Export PDF
         </button>
       </div>
