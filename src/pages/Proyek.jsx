@@ -158,7 +158,10 @@ const isStepLocked = (workflow, index) => {
   if (index === 0) return false
   return Number(workflow[index - 1]?.progress || 0) < 100
 }
-
+const statusWaktuText = p => {
+  const label = hitungStatusWaktu(p).label
+  return label.replace(/[^\x00-\x7F]/g, '').trim()
+}
 /* ================= COMPONENT ================= */
 
 export default function Proyek({ role }) {
@@ -252,7 +255,7 @@ export default function Proyek({ role }) {
           ['Tanggal Mulai', p.tanggalMulai],
           ['Durasi (Hari)', p.durasiHari],
           ['Tanggal Selesai', p.tanggalSelesai],
-          ['Status Waktu', hitungStatusWaktu(p).label],
+          ['Status Waktu', statusWaktuText(p)],
           ['Progress Total', `${calcProgress(p.workflow)}%`]
         ]
       })
