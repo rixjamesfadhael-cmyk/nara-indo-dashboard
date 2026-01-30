@@ -27,7 +27,7 @@ export const exportExcel = projects => {
     return {
       No: i + 1,
       NamaProyek: p.name,
-      NoKontrak: p.noKontrak || '',
+      NoKontrak: p.nomorKontrak || '',
       Instansi: p.instansi,
       Lokasi: p.lokasi,
       SumberDana: p.sumberDana,
@@ -99,7 +99,7 @@ export const exportPDF = projects => {
       head: [['Informasi', 'Detail']],
       body: [
         ['Nama Proyek', p.name],
-        ['No. Kontrak', p.noKontrak || '-'],
+        ['No. Kontrak', p.nomorKontrak || '-'],
         ['Instansi', p.instansi],
         ['Lokasi', p.lokasi],
         ['Sumber Dana', p.sumberDana],
