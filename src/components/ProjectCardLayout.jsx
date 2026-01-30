@@ -92,22 +92,66 @@ export default function ProjectCardLayout({
       )}
 
       {editing &&
-        workflow.map((s, i) => (
-          <div key={i}>
-            <small>{s.label}</small>
-            <input
-              type="number"
-              value={s.progress}
-              disabled={isStepLocked(workflow, i)}
-              onChange={e =>
-                updateDraft(p.id, i, e.target.value)
-              }
-            />
-          </div>
-        ))}
+        workflow.map((s, i) => {
+          const locked = isStepLocked(workflow, i)
+          const isDone = s.progress >= 100
+
+          return (
+            <div key={i} style={{ marginTop: 12 }}>
+              <small>{s.label}</small>
+
+              {/* SLIDER */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="5"
+                  value={s.progress}
+                  disabled={locked || isDone}
+                  onChange={e =>
+                    updateDraft(p.id, i, e.target.value)
+                  }
+                  style={{ flex: 1 }}
+                />
+
+                {/* INPUT MANUAL */}
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="5"
+                  value={s.progress}
+                  disabled={locked || isDone}
+                  onChange={e =>
+                    updateDraft(p.id, i, e.target.value)
+                  }
+                  style={{ width: 70 }}
+                />
+
+                {/* CHECKBOX SELESAI */}
+                <label style={{ fontSize: 12 }}>
+                  <input
+                    type="checkbox"
+                    checked={isDone}
+                    disabled={locked}
+                    onChange={e =>
+                      updateDraft(
+                        p.id,
+                        i,
+                        e.target.checked ? 100 : 0
+                      )
+                    }
+                  />{' '}
+                  Tandai selesai
+                </label>
+              </div>
+            </div>
+          )
+        })}
 
       {editing && (
-        <button onClick={() => simpanTahapan(p)}>
+        <button style={{ marginTop: 12 }} onClick={() => simpanTahapan(p)}>
           Simpan Progress
         </button>
       )}
