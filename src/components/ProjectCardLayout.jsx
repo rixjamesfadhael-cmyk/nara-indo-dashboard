@@ -97,11 +97,22 @@ export default function ProjectCardLayout({
           const isDone = s.progress >= 100
 
           return (
-            <div key={i} style={{ marginTop: 12 }}>
-              <small>{s.label}</small>
+            <div
+              key={i}
+              style={{
+                marginTop: 12,
+                paddingLeft: 10,
+                borderLeft: editing ? '3px solid #3b82f6' : '3px solid transparent',
+                opacity: locked ? 0.5 : 1,
+                cursor: locked ? 'not-allowed' : 'default'
+              }}
+            >
+              <small style={{ display: 'block', marginBottom: 6 }}>
+                {s.label}
+              </small>
 
-              {/* SLIDER */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {/* SLIDER */}
                 <input
                   type="range"
                   min="0"
@@ -112,7 +123,10 @@ export default function ProjectCardLayout({
                   onChange={e =>
                     updateDraft(p.id, i, e.target.value)
                   }
-                  style={{ flex: 1 }}
+                  style={{
+                    flex: 1,
+                    accentColor: isDone ? '#16a34a' : undefined
+                  }}
                 />
 
                 {/* INPUT MANUAL */}
@@ -126,10 +140,13 @@ export default function ProjectCardLayout({
                   onChange={e =>
                     updateDraft(p.id, i, e.target.value)
                   }
-                  style={{ width: 70 }}
+                  style={{
+                    width: 70,
+                    borderColor: isDone ? '#16a34a' : undefined
+                  }}
                 />
 
-                {/* CHECKBOX SELESAI */}
+                {/* CHECKBOX */}
                 <label style={{ fontSize: 12 }}>
                   <input
                     type="checkbox"
