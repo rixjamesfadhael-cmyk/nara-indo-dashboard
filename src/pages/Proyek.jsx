@@ -9,10 +9,6 @@ import {
   serverTimestamp
 } from 'firebase/firestore'
 import { db } from '../firebase'
-
-import * as XLSX from 'xlsx'
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
 import { exportExcel, exportPDF } from '../services/project.export'
 import { WORKFLOW_CONFIG } from '../services/workflow.config'
 import {
@@ -46,6 +42,7 @@ export default function Proyek({ role }) {
 
   const [form, setForm] = useState({
     name: '',
+    nomorKontrak: '',
     instansi: '',
     lokasi: '',
     sumberDana: '',
@@ -94,6 +91,7 @@ export default function Proyek({ role }) {
 
     setForm({
       name: '',
+      nomorKontrak: '',
       instansi: '',
       lokasi: '',
       sumberDana: '',

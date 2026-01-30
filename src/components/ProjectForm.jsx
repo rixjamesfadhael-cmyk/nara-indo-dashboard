@@ -17,6 +17,17 @@ export default function ProjectForm({
         value={form.name}
         onChange={e => setForm({ ...form, name: e.target.value })}
       />
+      <input
+  placeholder="No. Kontrak"
+  value={form.nomorKontrak || ''}
+  onChange={e =>
+    setForm({
+      ...form,
+      nomorKontrak: e.target.value.toUpperCase()
+    })
+  }
+/>
+
 
       <input
         placeholder="Instansi"
