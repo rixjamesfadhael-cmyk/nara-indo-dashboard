@@ -26,6 +26,12 @@ export default function ProjectCardLayout({
   return (
     <div style={{ background: '#fff', padding: 16, marginBottom: 16 }}>
       <strong>{p.name}</strong>
+      {p.nomorKontrak && (
+  <div style={{ fontSize: 12, color: '#555' }}>
+    No. Kontrak: <strong>{p.nomorKontrak}</strong>
+  </div>
+)}
+
       <div>{p.instansi} — {p.lokasi}</div>
       <div>Kontrak: {p.tanggalMulai} → {p.tanggalSelesai}</div>
       <div>Status Waktu: <strong>{status.label}</strong></div>
