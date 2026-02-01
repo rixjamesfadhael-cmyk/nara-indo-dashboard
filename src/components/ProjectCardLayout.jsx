@@ -37,6 +37,10 @@ export default function ProjectCardLayout({
       <div>Status Waktu: <strong>{status.label}</strong></div>
       {status.info && <div>{status.info}</div>}
       <div>Progress: {calcProgress(workflow)}%</div>
+      <div style={{ marginTop: 4, fontSize: 13 }}>
+  Status Pembayaran:{' '}
+  <strong>{p.paymentStatus || 'Belum Bayar'}</strong>
+</div>
 
       {role === 'admin' && (
         <>

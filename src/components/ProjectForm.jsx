@@ -109,6 +109,24 @@ export default function ProjectForm({
         </select>
       )}
 
+      <select
+  value={form.paymentStatus || 'Belum Bayar'}
+  onChange={e =>
+    setForm({
+      ...form,
+      paymentStatus: e.target.value
+    })
+  }
+  style={{ marginTop: 8 }}
+>
+  <option value="Belum Bayar">Belum Bayar</option>
+  <option value="DP">DP</option>
+  <option value="Termin 1">Termin 1</option>
+  <option value="Termin 2">Termin 2</option>
+  <option value="Termin 3">Termin 3</option>
+  <option value="Pelunasan">Pelunasan</option>
+</select>
+
       <button onClick={simpanProyek}>Simpan</button>
     </div>
   )

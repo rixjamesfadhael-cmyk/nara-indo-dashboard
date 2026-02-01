@@ -39,6 +39,7 @@ export const exportExcel = projects => {
       DurasiHari: p.durasiHari,
       TanggalSelesai: p.tanggalSelesai,
       StatusWaktu: statusWaktuText(p),
+      StatusPembayaran: p.paymentStatus || 'Belum Bayar',
       ProgressTotal: `${calcProgress(p.workflow)}%`,
       DetailTahapan: workflowText
     }
@@ -111,6 +112,7 @@ export const exportPDF = projects => {
         ['Durasi (Hari)', p.durasiHari],
         ['Tanggal Selesai', p.tanggalSelesai],
         ['Status Waktu', statusWaktuText(p)],
+        ['Status Pembayaran', p.paymentStatus || 'Belum Bayar'],
         ['Progress Total', `${calcProgress(p.workflow)}%`]
       ]
     })
