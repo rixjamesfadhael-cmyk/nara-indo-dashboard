@@ -38,12 +38,12 @@ export default function Dashboard({ goToProject }) {
   }, [])
 
   const {
-    aktif,
-    selesai,
-    totalNilaiAktif,
-    avgProgress,
-    butuhPerhatian
-  } = buildDashboardSummary(projects)
+  activeProjects,
+  archivedProjects,
+  totalNilaiAktif,
+  avgProgress,
+  butuhPerhatian
+} = buildDashboardSummary(projects)
 
   // ===== PIE GLOBAL (Aktif / Selesai / Arsip)
   const totalAktif = projects.filter(p => p.archived !== true).length
@@ -53,41 +53,40 @@ export default function Dashboard({ goToProject }) {
   ).length
 
   const pieData = {
-    labels: ['Aktif', 'Selesai', 'Arsip'],
-    datasets: [
-      {
-        data: [
-          totalAktif,
-          totalSelesaiAktif,
-          totalArsip
-        ],
-        backgroundColor: ['#2563eb', '#16a34a', '#64748b']
-      }
-    ]
-  }
+  labels: ['Aktif', 'Arsip'],
+  datasets: [
+    {
+      data: [
+        activeProjects.length,
+        archivedProjects.length
+      ],
+      backgroundColor: ['#2563eb', '#16a34a']
+    }
+  ]
+}
 
   const lineData = {
-    labels: aktif.slice(0, 10).map(p => p.name),
-    datasets: [
-      {
-        label: 'Progress (%)',
-        data: aktif.slice(0, 10).map(p => p.progress || 0),
-        borderColor: '#2563eb',
-        backgroundColor: 'rgba(37,99,235,0.2)',
-        tension: 0.4,
-        fill: true
-      }
-    ]
-  }
+  labels: activeProjects.slice(0, 10).map(p => p.name),
+  datasets: [
+    {
+      label: 'Progress (%)',
+      data: activeProjects.slice(0, 10).map(p => p.progress || 0),
+      borderColor: '#2563eb',
+      backgroundColor: 'rgba(37,99,235,0.2)',
+      tension: 0.4,
+      fill: true
+    }
+  ]
+}
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
       {/* SUMMARY */}
       <div style={cardWrap}>
-        <Card title="Proyek Aktif" value={aktif.length} />
-        <Card title="Total Nilai Aktif" value={rupiah(totalNilaiAktif)} />
-        <Card title="Proyek Selesai (Arsip & Lunas)" value={selesai.length} />
-        <Card title="Rata-rata Progress" value={`${avgProgress}%`} />
+        <Card title="Proyek Aktif" value={activeProjects.length} />
+<Card title="Total Nilai Aktif" value={rupiah(totalNilaiAktif)} />
+<Card title="Proyek Arsip" value={archivedProjects.length} />
+<Card title="Rata-rata Progress" value={`${avgProgress}%`} />
       </div>
 
       {/* ACTIONABLE */}
