@@ -23,7 +23,9 @@ export default function ProjectCardLayout({
   db
 }) {
   const editing = expanded === p.id
-  const workflow = editing ? drafts[p.id] : p.workflow
+const workflow = editing
+  ? drafts[p.id] || p.workflow || []
+  : p.workflow || []
   const status = hitungStatusWaktu(p)
 
   return (

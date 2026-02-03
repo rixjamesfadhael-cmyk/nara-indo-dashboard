@@ -30,7 +30,7 @@ const rupiah = (n = 0) =>
     maximumFractionDigits: 0
   }).format(n)
 
-export default function Dashboard() {
+export default function Dashboard({ goToProject }) {
   const [projects, setProjects] = useState([])
 
   useEffect(() => {
@@ -45,12 +45,23 @@ export default function Dashboard() {
     butuhPerhatian
   } = buildDashboardSummary(projects)
 
+  // ===== PIE GLOBAL (Aktif / Selesai / Arsip)
+  const totalAktif = projects.filter(p => p.archived !== true).length
+  const totalArsip = projects.filter(p => p.archived === true).length
+  const totalSelesaiAktif = projects.filter(
+    p => p.archived === true && Number(p.progress) === 100 && p.paymentStatus === 'Lunas'
+  ).length
+
   const pieData = {
-    labels: ['Aktif', 'Selesai'],
+    labels: ['Aktif', 'Selesai', 'Arsip'],
     datasets: [
       {
-        data: [aktif.length, selesai.length],
-        backgroundColor: ['#2563eb', '#16a34a']
+        data: [
+          totalAktif,
+          totalSelesaiAktif,
+          totalArsip
+        ],
+        backgroundColor: ['#2563eb', '#16a34a', '#64748b']
       }
     ]
   }
@@ -75,21 +86,48 @@ export default function Dashboard() {
       <div style={cardWrap}>
         <Card title="Proyek Aktif" value={aktif.length} />
         <Card title="Total Nilai Aktif" value={rupiah(totalNilaiAktif)} />
-        <Card title="Proyek Selesai" value={selesai.length} />
+        <Card title="Proyek Selesai (Arsip & Lunas)" value={selesai.length} />
         <Card title="Rata-rata Progress" value={`${avgProgress}%`} />
       </div>
 
       {/* ACTIONABLE */}
       <div style={card}>
         <h3>Perlu Perhatian</h3>
+
         {butuhPerhatian.length === 0 ? (
           <small>Semua proyek dalam kondisi baik</small>
         ) : (
           butuhPerhatian.map(p => (
-            <div key={p.id} style={{ fontSize: 14 }}>
-              • {p.name} ({p.progress || 0}%)
-            </div>
-          ))
+  <div
+    key={p.id}
+    style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      fontSize: 14,
+      marginBottom: 6
+    }}
+  >
+    <span>
+      • {p.name} ({p.progress || 0}%)
+    </span>
+
+    <button
+      onClick={() => goToProject(p.id)}
+      style={{
+        fontSize: 12,
+        color: '#2563eb',
+        fontWeight: 600,
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        padding: 0
+      }}
+    >
+      Lihat
+    </button>
+  </div>
+))
         )}
       </div>
 

@@ -29,7 +29,7 @@ import ProjectCard from '../components/ProjectCard'
 
 /* ================= COMPONENT ================= */
 
-export default function Proyek({ role }) {
+export default function Proyek({ role, focusProjectId, clearFocus }) {
   const [projects, setProjects] = useState([])
   const [adding, setAdding] = useState(false)
   const [expanded, setExpanded] = useState(null)
@@ -68,6 +68,35 @@ export default function Proyek({ role }) {
       )
     })
   }, [])
+
+  useEffect(() => {
+  if (focusProjectId && projects.length > 0) {
+    const project = projects.find(p => p.id === focusProjectId)
+
+    if (project) {
+      // 🔥 reset dulu
+      setExpanded(null)
+
+      // 🔥 baru set lagi (paksa React render ulang)
+      setTimeout(() => {
+        setExpanded(project.id)
+        setDrafts(d => ({
+          ...d,
+          [project.id]: JSON.parse(JSON.stringify(project.workflow))
+        }))
+      }, 0)
+    }
+  }
+}, [focusProjectId, projects])
+
+  useEffect(() => {
+  const params = new URLSearchParams(window.location.search)
+  const focusId = params.get('focus')
+
+  if (focusId && projects.length > 0) {
+    setExpanded(focusId)
+  }
+}, [projects])
 
   /* ================= CREATE ================= */
 

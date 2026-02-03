@@ -18,6 +18,7 @@ export default function App() {
   const [role, setRole] = useState('viewer')
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState('dashboard')
+  const [focusProjectId, setFocusProjectId] = useState(null)
   const [theme, setTheme] = useState('light')
 
   useEffect(() => {
@@ -50,11 +51,28 @@ export default function App() {
 
   switch (page) {
     case 'dashboard':
-      content = <Dashboard />
-      break
-    case 'projects':
-      content = <Proyek role={role} />
-      break
+  content = (
+    <Dashboard
+      goToProject={(projectId) => {
+        setFocusProjectId(null)          
+  setTimeout(() => {
+    setFocusProjectId(projectId)
+    setPage('projects')
+  }, 0)
+}}
+    />
+  )
+  break
+
+case 'projects':
+  content = (
+    <Proyek
+      role={role}
+      focusProjectId={focusProjectId}
+      clearFocus={() => setFocusProjectId(null)}
+    />
+  )
+  break
     case 'history':
       content = <Histori />
       break
@@ -84,9 +102,9 @@ export default function App() {
         />
       }
     >
-      <div key={page}>
-        {content}
-      </div>
+      <div key={`${page}-${focusProjectId || 'none'}`}>
+  {content}
+</div>
     </Layout>
   )
 }
