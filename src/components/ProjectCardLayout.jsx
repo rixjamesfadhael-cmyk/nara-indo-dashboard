@@ -1,3 +1,6 @@
+import { updateDoc } from 'firebase/firestore'
+import { canArchiveProject } from '../utils/projectArchive'
+
 export default function ProjectCardLayout({
   p,
   role,
@@ -72,6 +75,22 @@ export default function ProjectCardLayout({
           >
             Edit Kontrak
           </button>
+
+          {canArchiveProject(p) && (
+  <button
+    style={{ marginLeft: 8, background: '#fef3c7' }}
+    onClick={async () => {
+      if (!confirm('Arsipkan proyek ini?')) return
+
+      await updateDoc(doc(db, 'projects', p.id), {
+        archived: true,
+        archivedAt: new Date()
+      })
+    }}
+  >
+    Arsipkan Proyek
+  </button>
+)}
 
           <button
             style={{ marginLeft: 8 }}

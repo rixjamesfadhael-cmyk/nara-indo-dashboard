@@ -34,6 +34,9 @@ export default function Proyek({ role }) {
   const [adding, setAdding] = useState(false)
   const [expanded, setExpanded] = useState(null)
   const [drafts, setDrafts] = useState({})
+  const activeProjects = projects.filter(
+  p => p.archived !== true
+)
   const [filterText, setFilterText] = useState('')
   const [editingKontrak, setEditingKontrak] = useState(null)
   const [kontrakDraft, setKontrakDraft] = useState({
@@ -159,6 +162,10 @@ const simpanKontrak = async p => {
     filterText,
     hitungStatusWaktu
   )
+  const visibleProjects = filteredProjects.filter(
+  p => p.archived !== true
+)
+
 
     /* ================= RENDER ================= */
 
@@ -178,22 +185,16 @@ const simpanKontrak = async p => {
           }}
         />
 
-        <button
-          onClick={() =>
-            exportExcel(filterText ? filteredProjects : projects)
-          }
-        >
-          Export Excel
-        </button>
+        <button onClick={() => exportExcel(visibleProjects)}>
+  Export Excel
+</button>
 
-        <button
-          onClick={() =>
-            exportPDF(filterText ? filteredProjects : projects)
-          }
-          style={{ marginLeft: 8 }}
-        >
-          Export PDF
-        </button>
+<button
+  onClick={() => exportPDF(visibleProjects)}
+  style={{ marginLeft: 8 }}
+>
+  Export PDF
+</button>
       </div>
 
       {role === 'admin' && (
@@ -214,7 +215,7 @@ const simpanKontrak = async p => {
       )}
 
       <div style={{ marginTop: 24 }}>
-        {filteredProjects.map(p => (
+        {visibleProjects.map(p => (
           <ProjectCard
             key={p.id}
             p={p}

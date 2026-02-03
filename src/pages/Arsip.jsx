@@ -2,12 +2,17 @@ import { useEffect, useState } from 'react'
 import {
   collection,
   onSnapshot,
-  addDoc,
-  deleteDoc,
+  updateDoc,
   doc,
+  addDoc,
   serverTimestamp
 } from 'firebase/firestore'
 import { db } from '../firebase'
+import {
+  isArchivedProject,
+  canEditFinalStepInArchive,
+  shouldUnarchiveProject
+} from '../utils/projectArchive'
 
 const rupiah = n =>
   new Intl.NumberFormat('id-ID', {
@@ -18,68 +23,22 @@ const rupiah = n =>
 
 export default function Arsip({ role }) {
   const [archives, setArchives] = useState([])
-  const [editing, setEditing] = useState(null)
-
+  const [editingWorkflow, setEditingWorkflow] = useState(null)
   const [search, setSearch] = useState('')
-  const [filterStatus, setFilterStatus] = useState('SEMUA')
 
-  /* ===== FETCH ARSIP ===== */
   useEffect(() => {
-    return onSnapshot(collection(db, 'arsip_proyek'), snap => {
-      setArchives(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    return onSnapshot(collection(db, 'projects'), snap => {
+      setArchives(
+        snap.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .filter(p => isArchivedProject(p))
+      )
     })
   }, [])
 
-  /* ===== HISTORI LOGGER ===== */
-  const logActivity = async (action, projectName, description) => {
-    await addDoc(collection(db, 'activity_logs'), {
-      action,
-      projectName,
-      description,
-      createdAt: serverTimestamp()
-    })
-  }
-
-  /* ===== FILTER ===== */
-  const filteredArchives = archives.filter(a => {
-    const matchName = a.name
-      ?.toLowerCase()
-      .includes(search.toLowerCase())
-
-    const matchStatus =
-      filterStatus === 'SEMUA'
-        ? true
-        : a.status === filterStatus
-
-    return matchName && matchStatus
-  })
-
-  /* ===== RESTORE ===== */
-  const simpanRestore = async () => {
-    const { id, name, budget, progress } = editing
-
-    if (Number(progress) >= 100) {
-      alert('Progress harus di bawah 100 untuk dikembalikan')
-      return
-    }
-
-    await addDoc(collection(db, 'projects'), {
-      name,
-      budget: Number(budget),
-      progress: Number(progress),
-      status: 'Aktif'
-    })
-
-    await deleteDoc(doc(db, 'arsip_proyek', id))
-
-    await logActivity(
-      'RESTORE',
-      name,
-      `Dikembalikan ke proyek aktif. Progress: ${progress}%`
-    )
-
-    setEditing(null)
-  }
+  const filteredArchives = archives.filter(a =>
+    a.name?.toLowerCase().includes(search.toLowerCase())
+  )
 
   return (
     <>
@@ -87,38 +46,26 @@ export default function Arsip({ role }) {
       <div style={header}>
         <h2>Arsip Proyek</h2>
 
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input
-            placeholder="Cari proyek..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            style={searchInput}
-          />
-
-          <select
-            value={filterStatus}
-            onChange={e => setFilterStatus(e.target.value)}
-            style={select}
-          >
-            <option value="SEMUA">Semua</option>
-            <option value="Selesai">Selesai</option>
-          </select>
-        </div>
+        <input
+          placeholder="Cari proyek..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          style={searchInput}
+        />
       </div>
 
-      {/* LIST */}
+      {/* LIST ARSIP */}
       <div style={wrap}>
         {filteredArchives.map(a => (
           <div key={a.id} style={card}>
             <div style={head}>
               <h3 style={title}>{a.name}</h3>
-              <span style={badge(a.status)}>{a.status}</span>
             </div>
 
             <div style={row}>
               <div>
                 <small>Nilai</small>
-                <strong>{rupiah(a.budget)}</strong>
+                <strong>{rupiah(a.nilaiAnggaran)}</strong>
               </div>
               <div>
                 <small>Progress</small>
@@ -137,8 +84,16 @@ export default function Arsip({ role }) {
 
             {role === 'admin' && (
               <div style={actions}>
-                <button style={edit} onClick={() => setEditing(a)}>
-                  Edit
+                <button
+                  style={edit}
+                  onClick={() =>
+                    setEditingWorkflow({
+                      project: a,
+                      workflow: JSON.parse(JSON.stringify(a.workflow))
+                    })
+                  }
+                >
+                  Edit Tahapan Akhir
                 </button>
               </div>
             )}
@@ -146,26 +101,92 @@ export default function Arsip({ role }) {
         ))}
       </div>
 
-      {/* MODAL EDIT / RESTORE */}
-      {editing && (
+      {/* MODAL EDIT TAHAPAN TERAKHIR */}
+      {editingWorkflow && (
         <div style={overlay}>
           <div style={modal}>
-            <h3>Edit Arsip</h3>
+            <h3>Edit Tahapan Terakhir</h3>
 
-            <input value={editing.name} disabled />
-            <input value={editing.budget} disabled />
+            {editingWorkflow.workflow.map((step, idx) => {
+              const canEdit = canEditFinalStepInArchive(
+                editingWorkflow.workflow,
+                idx
+              )
 
-            <input
-              type="number"
-              value={editing.progress}
-              onChange={e =>
-                setEditing({ ...editing, progress: e.target.value })
-              }
-            />
+              return (
+                <div key={idx}>
+                  <small>{step.label}</small>
+
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="5"
+                    value={step.progress}
+                    disabled={!canEdit}
+                    onChange={e => {
+                      const wf = [...editingWorkflow.workflow]
+                      wf[idx] = {
+                        ...wf[idx],
+                        progress: Number(e.target.value)
+                      }
+                      setEditingWorkflow({
+                        ...editingWorkflow,
+                        workflow: wf
+                      })
+                    }}
+                  />
+
+                  <input
+                    type="number"
+                    value={step.progress}
+                    disabled={!canEdit}
+                    onChange={e => {
+                      const wf = [...editingWorkflow.workflow]
+                      wf[idx] = {
+                        ...wf[idx],
+                        progress: Number(e.target.value)
+                      }
+                      setEditingWorkflow({
+                        ...editingWorkflow,
+                        workflow: wf
+                      })
+                    }}
+                  />
+                </div>
+              )
+            })}
 
             <div style={modalActions}>
-              <button onClick={() => setEditing(null)}>Batal</button>
-              <button style={save} onClick={simpanRestore}>
+              <button onClick={() => setEditingWorkflow(null)}>
+                Batal
+              </button>
+
+              <button
+                style={save}
+                onClick={async () => {
+                  const { project, workflow } = editingWorkflow
+
+                  const updates = {
+                    workflow,
+                    progress: Math.round(
+                      workflow.reduce((a, b) => a + b.progress, 0) /
+                        workflow.length
+                    )
+                  }
+
+                  if (shouldUnarchiveProject(workflow)) {
+                    updates.archived = false
+                  }
+
+                  await updateDoc(
+                    doc(db, 'projects', project.id),
+                    updates
+                  )
+
+                  setEditingWorkflow(null)
+                }}
+              >
                 Simpan
               </button>
             </div>
@@ -176,7 +197,7 @@ export default function Arsip({ role }) {
   )
 }
 
-/* ===== STYLE (MENIRU PROYEK, UTUH) ===== */
+/* ================= STYLES ================= */
 
 const header = {
   display: 'flex',
@@ -186,12 +207,6 @@ const header = {
 }
 
 const searchInput = {
-  padding: 8,
-  borderRadius: 8,
-  border: '1px solid #e5e7eb'
-}
-
-const select = {
   padding: 8,
   borderRadius: 8,
   border: '1px solid #e5e7eb'
@@ -224,15 +239,6 @@ const title = {
   fontSize: 18,
   fontWeight: 700
 }
-
-const badge = status => ({
-  padding: '4px 10px',
-  borderRadius: 999,
-  fontSize: 12,
-  fontWeight: 700,
-  color: '#fff',
-  background: '#16a34a'
-})
 
 const row = {
   display: 'flex',
