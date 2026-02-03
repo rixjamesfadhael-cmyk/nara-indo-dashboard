@@ -38,55 +38,54 @@ export default function Dashboard({ goToProject }) {
   }, [])
 
   const {
-  activeProjects,
-  archivedProjects,
-  totalNilaiAktif,
-  avgProgress,
-  butuhPerhatian
-} = buildDashboardSummary(projects)
+    activeProjects,
+    archivedProjects,
+    totalNilaiAktif,
+    avgProgress,
+    butuhPerhatian
+  } = buildDashboardSummary(projects)
 
-  // ===== PIE GLOBAL (Aktif / Selesai / Arsip)
-  const totalAktif = projects.filter(p => p.archived !== true).length
-  const totalArsip = projects.filter(p => p.archived === true).length
-  const totalSelesaiAktif = projects.filter(
-    p => p.archived === true && Number(p.progress) === 100 && p.paymentStatus === 'Lunas'
-  ).length
+  /* ================= PIE CHART (AKTIF vs ARSIP) ================= */
 
   const pieData = {
-  labels: ['Aktif', 'Arsip'],
-  datasets: [
-    {
-      data: [
-        activeProjects.length,
-        archivedProjects.length
-      ],
-      backgroundColor: ['#2563eb', '#16a34a']
-    }
-  ]
-}
+    labels: ['Aktif', 'Arsip'],
+    datasets: [
+      {
+        data: [
+          activeProjects.length,
+          archivedProjects.length
+        ],
+        backgroundColor: ['#2563eb', '#16a34a']
+      }
+    ]
+  }
+
+  /* ================= LINE CHART (PROYEK AKTIF) ================= */
 
   const lineData = {
-  labels: activeProjects.slice(0, 10).map(p => p.name),
-  datasets: [
-    {
-      label: 'Progress (%)',
-      data: activeProjects.slice(0, 10).map(p => p.progress || 0),
-      borderColor: '#2563eb',
-      backgroundColor: 'rgba(37,99,235,0.2)',
-      tension: 0.4,
-      fill: true
-    }
-  ]
-}
+    labels: activeProjects.slice(0, 10).map(p => p.name),
+    datasets: [
+      {
+        label: 'Progress (%)',
+        data: activeProjects
+          .slice(0, 10)
+          .map(p => p.progress || 0),
+        borderColor: '#2563eb',
+        backgroundColor: 'rgba(37,99,235,0.2)',
+        tension: 0.4,
+        fill: true
+      }
+    ]
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
       {/* SUMMARY */}
       <div style={cardWrap}>
         <Card title="Proyek Aktif" value={activeProjects.length} />
-<Card title="Total Nilai Aktif" value={rupiah(totalNilaiAktif)} />
-<Card title="Proyek Arsip" value={archivedProjects.length} />
-<Card title="Rata-rata Progress" value={`${avgProgress}%`} />
+        <Card title="Total Nilai Aktif" value={rupiah(totalNilaiAktif)} />
+        <Card title="Proyek Arsip" value={archivedProjects.length} />
+        <Card title="Rata-rata Progress" value={`${avgProgress}%`} />
       </div>
 
       {/* ACTIONABLE */}
@@ -97,36 +96,38 @@ export default function Dashboard({ goToProject }) {
           <small>Semua proyek dalam kondisi baik</small>
         ) : (
           butuhPerhatian.map(p => (
-  <div
-    key={p.id}
-    style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      fontSize: 14,
-      marginBottom: 6
-    }}
-  >
-    <span>
-      • {p.name} ({p.progress || 0}%)
-    </span>
+            <div
+              key={p.id}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                fontSize: 14,
+                marginBottom: 6
+              }}
+            >
+              <span>
+                • {p.name} ({p.progress || 0}%)
+              </span>
 
-    <button
-      onClick={() => goToProject(p.id)}
-      style={{
-        fontSize: 12,
-        color: '#2563eb',
-        fontWeight: 600,
-        background: 'none',
-        border: 'none',
-        cursor: 'pointer',
-        padding: 0
-      }}
-    >
-      Lihat
-    </button>
-  </div>
-))
+              <button
+                onClick={() =>
+                  goToProject(p.id, { autoEdit: true })
+                }
+                style={{
+                  fontSize: 12,
+                  color: '#2563eb',
+                  fontWeight: 600,
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0
+                }}
+              >
+                Lihat
+              </button>
+            </div>
+          ))
         )}
       </div>
 
@@ -136,6 +137,7 @@ export default function Dashboard({ goToProject }) {
           <h3>Komposisi Proyek</h3>
           <Pie data={pieData} />
         </div>
+
         <div style={chartCard}>
           <h3>Progress Proyek Aktif</h3>
           <Line data={lineData} />
@@ -144,6 +146,8 @@ export default function Dashboard({ goToProject }) {
     </div>
   )
 }
+
+/* ================= COMPONENT KECIL ================= */
 
 function Card({ title, value }) {
   return (
@@ -154,7 +158,8 @@ function Card({ title, value }) {
   )
 }
 
-/* STYLE */
+/* ================= STYLE ================= */
+
 const cardWrap = {
   display: 'grid',
   gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
