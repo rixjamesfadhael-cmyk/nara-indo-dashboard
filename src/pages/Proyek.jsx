@@ -131,20 +131,28 @@ export default function Proyek({ role }) {
     setExpanded(null)
   }
 
-  const simpanKontrak = async p => {
-    const tanggalSelesai = hitungTanggalSelesai(
-      kontrakDraft.tanggalMulai,
-      kontrakDraft.durasiHari
-    )
+const simpanKontrak = async p => {
+  const tanggalSelesai = hitungTanggalSelesai(
+    kontrakDraft.tanggalMulai,
+    kontrakDraft.durasiHari
+  )
 
-       await updateDoc(doc(db, 'projects', p.id), {
-      tanggalMulai: kontrakDraft.tanggalMulai,
-      durasiHari: Number(kontrakDraft.durasiHari),
-      tanggalSelesai
-    })
+  await updateDoc(doc(db, 'projects', p.id), {
+    name: kontrakDraft.name,
+    nomorKontrak: kontrakDraft.nomorKontrak,
+    instansi: kontrakDraft.instansi,
+    lokasi: kontrakDraft.lokasi,
+    sumberDana: kontrakDraft.sumberDana,
+    nilaiAnggaran: Number(kontrakDraft.nilaiAnggaran),
+    tahunAnggaran: kontrakDraft.tahunAnggaran,
+    paymentStatus: kontrakDraft.paymentStatus,
+    tanggalMulai: kontrakDraft.tanggalMulai,
+    durasiHari: Number(kontrakDraft.durasiHari),
+    tanggalSelesai
+  })
 
-    setEditingKontrak(null)
-  }
+  setEditingKontrak(null)
+}
 
     /* ================= RENDER ================= */
 
