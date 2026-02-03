@@ -11,6 +11,7 @@ import {
 import { db } from '../firebase'
 import { exportExcel, exportPDF } from '../services/project.export'
 import { WORKFLOW_CONFIG } from '../services/workflow.config'
+import { filterProjects } from '../utils/project.filter'
 import {
   safeWorkflow,
   calcProgress,
@@ -33,7 +34,7 @@ export default function Proyek({ role }) {
   const [adding, setAdding] = useState(false)
   const [expanded, setExpanded] = useState(null)
   const [drafts, setDrafts] = useState({})
-
+  const [filterText, setFilterText] = useState('')
   const [editingKontrak, setEditingKontrak] = useState(null)
   const [kontrakDraft, setKontrakDraft] = useState({
     tanggalMulai: '',
@@ -153,6 +154,11 @@ const simpanKontrak = async p => {
 
   setEditingKontrak(null)
 }
+  const filteredProjects = filterProjects(
+    projects,
+    filterText,
+    hitungStatusWaktu
+  )
 
     /* ================= RENDER ================= */
 
@@ -160,13 +166,30 @@ const simpanKontrak = async p => {
     <div>
       <h2>Manajemen Proyek</h2>
 
-      <div style={{ marginBottom: 12 }}>
-        <button onClick={() => exportExcel(projects)}>
+            <div style={{ marginBottom: 12 }}>
+        <input
+          placeholder="Cari proyek..."
+          value={filterText}
+          onChange={e => setFilterText(e.target.value)}
+          style={{
+            padding: 6,
+            marginRight: 8,
+            minWidth: 220
+          }}
+        />
+
+        <button
+          onClick={() =>
+            exportExcel(filterText ? filteredProjects : projects)
+          }
+        >
           Export Excel
         </button>
 
         <button
-          onClick={() => exportPDF(projects)}
+          onClick={() =>
+            exportPDF(filterText ? filteredProjects : projects)
+          }
           style={{ marginLeft: 8 }}
         >
           Export PDF
@@ -191,7 +214,7 @@ const simpanKontrak = async p => {
       )}
 
       <div style={{ marginTop: 24 }}>
-        {projects.map(p => (
+        {filteredProjects.map(p => (
           <ProjectCard
             key={p.id}
             p={p}
