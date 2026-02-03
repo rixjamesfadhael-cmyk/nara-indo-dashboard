@@ -12,6 +12,7 @@ import {
 import { Pie, Line } from 'react-chartjs-2'
 import { subscribeProjects } from '../services/project.service'
 import { buildDashboardSummary } from '../services/dashboard.logic'
+console.log('DASHBOARD VERSION: 2026-02-VERCEL-FIX');
 
 ChartJS.register(
   ArcElement,
