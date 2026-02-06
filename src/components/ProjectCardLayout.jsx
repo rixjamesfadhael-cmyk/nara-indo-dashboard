@@ -1,5 +1,6 @@
 import { updateDoc } from 'firebase/firestore'
 import { canArchiveProject } from '../utils/projectArchive'
+import { useEffect, useRef } from 'react'
 
 export default function ProjectCardLayout({
   p,
@@ -28,10 +29,46 @@ const workflow = editing
   : p.workflow || []
   const status = hitungStatusWaktu(p)
 
-  return (
-    <div style={{ background: '#fff', padding: 16, marginBottom: 16 }}>
-      <strong>{p.name}</strong>
+const cardRef = useRef(null)
 
+useEffect(() => {
+  if (expanded === p.id && cardRef.current) {
+    cardRef.current.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center'
+    })
+  }
+}, [expanded, p.id])
+
+return (
+  <div
+  ref={cardRef}
+    style={{
+      background: '#fff',
+      padding: 16,
+      marginBottom: 16,
+      borderRadius: 12,
+      border:
+        expanded === p.id
+          ? '2px solid #2563eb'
+          : '1px solid #e5e7eb',
+      boxShadow:
+        expanded === p.id
+          ? '0 0 0 4px rgba(37,99,235,0.15)'
+          : '0 4px 10px rgba(0,0,0,0.04)',
+      transition: 'all 0.25s ease'
+    }}
+  >
+      <div
+  style={{
+    fontWeight: 700,
+    fontSize: 16,
+    marginBottom: 4,
+    color: '#0f172a'
+  }}
+>
+  {p.name}
+</div>
       {p.nomorKontrak && (
         <div style={{ fontSize: 12, color: '#555' }}>
           No. Kontrak: <strong>{p.nomorKontrak}</strong>
