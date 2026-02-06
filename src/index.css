@@ -68,3 +68,7 @@ body {
   margin-top: auto;
   color: #fca5a5;
 }
+
+span:hover > .tooltip-content {
+  opacity: 1;
+}

@@ -28,6 +28,10 @@ const workflow = editing
   ? drafts[p.id] || p.workflow || []
   : p.workflow || []
   const status = hitungStatusWaktu(p)
+  const needAttention =
+  (Number(p.progress) || 0) < 50 ||
+  status?.level === 'warning' ||
+  status?.level === 'danger'
 
 const cardRef = useRef(null)
 
@@ -61,13 +65,36 @@ return (
   >
       <div
   style={{
-    fontWeight: 700,
-    fontSize: 16,
-    marginBottom: 4,
-    color: '#0f172a'
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6
   }}
 >
-  {p.name}
+  <div
+    style={{
+      fontWeight: 700,
+      fontSize: 16,
+      color: '#0f172a'
+    }}
+  >
+    {p.name}
+  </div>
+
+  {needAttention && (
+    <span
+      style={{
+        fontSize: 11,
+        fontWeight: 700,
+        padding: '4px 8px',
+        borderRadius: 999,
+        background: '#fee2e2',
+        color: '#b91c1c'
+      }}
+    >
+      Perlu Perhatian
+    </span>
+  )}
 </div>
       {p.nomorKontrak && (
         <div style={{ fontSize: 12, color: '#555' }}>
@@ -77,11 +104,40 @@ return (
 
       <div>{p.instansi} — {p.lokasi}</div>
       <div>Kontrak: {p.tanggalMulai} → {p.tanggalSelesai}</div>
-      <div>Status Waktu: <strong>{status.label}</strong></div>
-      {status.info && <div>{status.info}</div>}
+      <div
+  style={{
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    fontSize: 16,
+    marginTop: 1
+  }}
+>
+  <span>Status Waktu:</span>
+
+  <span
+    style={{
+      fontWeight: 600,
+      color:
+        status.level === 'danger'
+          ? '#b91c1c'
+          : status.level === 'warning'
+          ? '#b45309'
+          : '#15803d'
+    }}
+  >
+    {status.label}
+  </span>
+
+  {status.info && (
+    <span style={{ color: '#64748b' }}>
+      ({status.info})
+    </span>
+  )}
+</div>
       <div>Progress: {calcProgress(workflow)}%</div>
 
-      <div style={{ marginTop: 4, fontSize: 13 }}>
+      <div style={{ marginTop: 4, marginBottom: 4, fontSize: 12 }}>
         Status Pembayaran:{' '}
         <strong>{p.paymentStatus || 'Belum Bayar'}</strong>
       </div>
