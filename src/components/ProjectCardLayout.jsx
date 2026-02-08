@@ -27,7 +27,7 @@ export default function ProjectCardLayout({
   doc,
   db
 }) {
-  const editing = expanded === p.id
+  const editing = expanded === p.id && editingKontrak !== p.id
 
   const workflow = editing
     ? drafts[p.id] || p.workflow || []
@@ -158,28 +158,35 @@ export default function ProjectCardLayout({
           </button>
 
           <button
-            style={{ marginLeft: 8 }}
-            onClick={() => {
-              setEditingKontrak(p.id)
-              setKontrakDraft({
-                name: p.name || '',
-                nomorKontrak: p.nomorKontrak || '',
-                instansi: p.instansi || '',
-                lokasi: p.lokasi || '',
-                sumberDana: p.sumberDana || '',
-                nilaiAnggaran: p.nilaiAnggaran || '',
-                tahunAnggaran: p.tahunAnggaran || '',
-                paymentStatus: p.paymentStatus || DEFAULT_PAYMENT_STATUS,
-                division: p.division || '',
-                subDivision: p.subDivision || '',
-                tanggalMulai: p.tanggalMulai || '',
-                durasiHari: p.durasiHari || ''
-              })
-            }}
-          >
-            Edit Kontrak
-          </button>
-
+  style={{ marginLeft: 8 }}
+  onClick={() => {
+    if (editingKontrak === p.id) {
+      // Tutup edit kontrak tanpa simpan
+      setEditingKontrak(null)
+      setExpanded(null)
+      return
+    }
+    // Buka edit kontrak
+    setExpanded(p.id)
+    setEditingKontrak(p.id)
+    setKontrakDraft({
+      name: p.name || '',
+      nomorKontrak: p.nomorKontrak || '',
+      instansi: p.instansi || '',
+      lokasi: p.lokasi || '',
+      sumberDana: p.sumberDana || '',
+      nilaiAnggaran: p.nilaiAnggaran || '',
+      tahunAnggaran: p.tahunAnggaran || '',
+      paymentStatus: p.paymentStatus || DEFAULT_PAYMENT_STATUS,
+      division: p.division || '',
+      subDivision: p.subDivision || '',
+      tanggalMulai: p.tanggalMulai || '',
+      durasiHari: p.durasiHari || ''
+    })
+  }}
+>
+  {editingKontrak === p.id ? 'Tutup Kontrak' : 'Edit Kontrak'}
+</button>
           {canArchiveProject(p) && (
             <button
               style={{ marginLeft: 8, background: '#fef3c7' }}
@@ -316,9 +323,16 @@ export default function ProjectCardLayout({
 
           </div>
 
-          <button style={{ marginTop: 8 }} onClick={() => simpanKontrak(p)}>
-            Simpan Kontrak
-          </button>
+          <button
+  style={{ marginTop: 8 }}
+  onClick={async () => {
+    await simpanKontrak(p)
+    setEditingKontrak(null)
+    setExpanded(null)
+  }}
+>
+  Simpan Kontrak
+</button>
         </div>
       )}
 
