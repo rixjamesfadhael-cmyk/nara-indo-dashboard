@@ -1,6 +1,7 @@
 import { updateDoc } from 'firebase/firestore'
 import { canArchiveProject } from '../utils/projectArchive'
 import { useEffect, useRef, useState } from 'react'
+import { formatRupiah, formatNumber, parseNumber } from '../utils/currency'
 import {
   PAYMENT_STATUS,
   DEFAULT_PAYMENT_STATUS
@@ -175,7 +176,7 @@ const [showDetail, setShowDetail] = useState(false)
     }}
   >
     <div><strong>Sumber Dana:</strong> {p.sumberDana || '-'}</div>
-    <div><strong>Nilai Anggaran:</strong> {p.nilaiAnggaran || '-'}</div>
+    <div><strong>Nilai Anggaran:</strong> {p.nilaiAnggaran ? formatRupiah(p.nilaiAnggaran) : '-'}</div>
     <div><strong>Tahun Anggaran:</strong> {p.tahunAnggaran || '-'}</div>
     <div><strong>Divisi:</strong> {p.division || '-'}</div>
     <div><strong>Sub Divisi:</strong> {p.subDivision || '-'}</div>
@@ -299,13 +300,18 @@ const [showDetail, setShowDetail] = useState(false)
             />
 
             <input
-              type="number"
-              placeholder="Nilai Anggaran"
-              value={kontrakDraft.nilaiAnggaran}
-              onChange={e =>
-                setKontrakDraft({ ...kontrakDraft, nilaiAnggaran: e.target.value })
-              }
-            />
+  type="text"
+  inputMode="numeric"
+  placeholder="Nilai Anggaran"
+  value={formatNumber(kontrakDraft.nilaiAnggaran)}
+  onChange={e => {
+    const numericValue = parseNumber(e.target.value)
+    setKontrakDraft({
+      ...kontrakDraft,
+      nilaiAnggaran: numericValue
+    })
+  }}
+/>
 
             <input
               placeholder="Tahun Anggaran"

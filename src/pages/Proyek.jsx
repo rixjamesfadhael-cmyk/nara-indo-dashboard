@@ -50,7 +50,7 @@ export default function Proyek({ role, focusProjectId, clearFocus }) {
     instansi: '',
     lokasi: '',
     sumberDana: '',
-    nilaiAnggaran: '',
+    nilaiAnggaran: 0,
     tahunAnggaran: '',
     tanggalMulai: '',
     durasiHari: '',
@@ -194,7 +194,6 @@ const simpanKontrak = async p => {
   const visibleProjects = filteredProjects.filter(
   p => p.archived !== true
 )
-
 
     /* ================= RENDER ================= */
 

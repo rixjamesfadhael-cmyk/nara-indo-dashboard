@@ -1,3 +1,5 @@
+import { formatNumber, parseNumber } from '../utils/currency'
+
 export default function ProjectForm({
   adding,
   form,
@@ -28,7 +30,6 @@ export default function ProjectForm({
   }
 />
 
-
       <input
         placeholder="Instansi"
         value={form.instansi}
@@ -48,11 +49,18 @@ export default function ProjectForm({
       />
 
       <input
-        type="number"
-        placeholder="Nilai Anggaran"
-        value={form.nilaiAnggaran}
-        onChange={e => setForm({ ...form, nilaiAnggaran: e.target.value })}
-      />
+  type="text"
+  inputMode="numeric"
+  placeholder="Nilai Anggaran"
+  value={formatNumber(form.nilaiAnggaran)}
+  onChange={e => {
+    const numericValue = parseNumber(e.target.value)
+    setForm({
+      ...form,
+      nilaiAnggaran: numericValue
+    })
+  }}
+/>
 
       <input
         type="number"
