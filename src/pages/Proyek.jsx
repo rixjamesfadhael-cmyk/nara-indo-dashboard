@@ -38,6 +38,7 @@ export default function Proyek({ role, focusProjectId, clearFocus }) {
   p => p.archived !== true
 )
   const [filterText, setFilterText] = useState('')
+  const [onlyAttention, setOnlyAttention] = useState(false)
   const [editingKontrak, setEditingKontrak] = useState(null)
   const [kontrakDraft, setKontrakDraft] = useState({
     tanggalMulai: '',
@@ -194,9 +195,20 @@ const simpanKontrak = async p => {
     filterText,
     hitungStatusWaktu
   )
-  const visibleProjects = filteredProjects.filter(
-  p => p.archived !== true
-)
+ const visibleProjects = filteredProjects
+  .filter(p => p.archived !== true)
+  .filter(p => {
+    if (!onlyAttention) return true
+
+    const status = hitungStatusWaktu(p)
+    const progress = Number(p.progress) || 0
+
+    return (
+      progress < 50 ||
+      status?.level === 'warning' ||
+      status?.level === 'danger'
+    )
+  })
 
     /* ================= RENDER ================= */
 
@@ -215,6 +227,23 @@ const simpanKontrak = async p => {
             minWidth: 220
           }}
         />
+
+        <button
+  onClick={() => setOnlyAttention(v => !v)}
+  style={{
+    marginLeft: 7,
+    marginRight:7,
+    padding: '3px 10px',
+    fontWeight: 700,
+    borderRadius: 5,
+    border: '1px solid #f59e0b',
+    background: onlyAttention ? '#ff7c7c' : '#fff',
+    color: '#92400e',
+    cursor: 'pointer'
+  }}
+>
+  Perlu Perhatian
+</button>
 
         <button onClick={() => exportExcel(visibleProjects)}>
   Export Excel

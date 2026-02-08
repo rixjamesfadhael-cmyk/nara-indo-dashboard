@@ -33,6 +33,7 @@ export const filterProjects = (projects, keyword, hitungStatusWaktu) => {
       p.division,
       p.subDivision,
       p.paymentStatus,
+      p.pic,
       status?.label,
       status?.info
     ]
