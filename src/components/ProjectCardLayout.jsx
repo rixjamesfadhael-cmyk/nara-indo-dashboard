@@ -1,6 +1,6 @@
 import { updateDoc } from 'firebase/firestore'
 import { canArchiveProject } from '../utils/projectArchive'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   PAYMENT_STATUS,
   DEFAULT_PAYMENT_STATUS
@@ -28,7 +28,7 @@ export default function ProjectCardLayout({
   db
 }) {
   const editing = expanded === p.id && editingKontrak !== p.id
-
+const [showDetail, setShowDetail] = useState(false)
   const workflow = editing
     ? drafts[p.id] || p.workflow || []
     : p.workflow || []
@@ -145,6 +145,42 @@ export default function ProjectCardLayout({
       </div>
 
       <div>Progress: {calcProgress(workflow)}%</div>
+      
+      <button
+  style={{
+    marginTop: 6,
+    fontSize: 12,
+    color: '#2563eb',
+    background: 'none',
+    border: 'none',
+    padding: 0,
+    cursor: 'pointer'
+  }}
+  onClick={() => setShowDetail(v => !v)}
+>
+  {showDetail ? 'Sembunyikan Detail ▲' : 'Lihat Detail ▼'}
+</button>
+
+{showDetail && (
+  <div
+    style={{
+      marginTop: 8,
+      padding: 10,
+      borderRadius: 8,
+      background: '#f8fafc',
+      fontSize: 12,
+      color: '#334155',
+      display: 'grid',
+      gap: 4
+    }}
+  >
+    <div><strong>Sumber Dana:</strong> {p.sumberDana || '-'}</div>
+    <div><strong>Nilai Anggaran:</strong> {p.nilaiAnggaran || '-'}</div>
+    <div><strong>Tahun Anggaran:</strong> {p.tahunAnggaran || '-'}</div>
+    <div><strong>Divisi:</strong> {p.division || '-'}</div>
+    <div><strong>Sub Divisi:</strong> {p.subDivision || '-'}</div>
+  </div>
+)}
 
       <div style={{ marginTop: 4, marginBottom: 4, fontSize: 12 }}>
         Status Pembayaran:{' '}
