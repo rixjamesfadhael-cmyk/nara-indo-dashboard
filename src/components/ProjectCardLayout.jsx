@@ -1,6 +1,10 @@
 import { updateDoc } from 'firebase/firestore'
 import { canArchiveProject } from '../utils/projectArchive'
 import { useEffect, useRef } from 'react'
+import {
+  PAYMENT_STATUS,
+  DEFAULT_PAYMENT_STATUS
+} from '../services/payment.config'
 
 export default function ProjectCardLayout({
   p,
@@ -24,78 +28,82 @@ export default function ProjectCardLayout({
   db
 }) {
   const editing = expanded === p.id
-const workflow = editing
-  ? drafts[p.id] || p.workflow || []
-  : p.workflow || []
+
+  const workflow = editing
+    ? drafts[p.id] || p.workflow || []
+    : p.workflow || []
+
   const status = hitungStatusWaktu(p)
+
   const needAttention =
-  (Number(p.progress) || 0) < 50 ||
-  status?.level === 'warning' ||
-  status?.level === 'danger'
+    (Number(p.progress) || 0) < 50 ||
+    status?.level === 'warning' ||
+    status?.level === 'danger'
 
-const cardRef = useRef(null)
+  const cardRef = useRef(null)
 
-useEffect(() => {
-  if (expanded === p.id && cardRef.current) {
-    cardRef.current.scrollIntoView({
-      behavior: 'smooth',
-      block: 'center'
-    })
-  }
-}, [expanded, p.id])
+  useEffect(() => {
+    if (expanded === p.id && cardRef.current) {
+      cardRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      })
+    }
+  }, [expanded, p.id])
 
-return (
-  <div
-  ref={cardRef}
-    style={{
-      background: '#fff',
-      padding: 16,
-      marginBottom: 16,
-      borderRadius: 12,
-      border:
-        expanded === p.id
-          ? '2px solid #2563eb'
-          : '1px solid #e5e7eb',
-      boxShadow:
-        expanded === p.id
-          ? '0 0 0 4px rgba(37,99,235,0.15)'
-          : '0 4px 10px rgba(0,0,0,0.04)',
-      transition: 'all 0.25s ease'
-    }}
-  >
-      <div
-  style={{
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 6
-  }}
->
-  <div
-    style={{
-      fontWeight: 700,
-      fontSize: 16,
-      color: '#0f172a'
-    }}
-  >
-    {p.name}
-  </div>
-
-  {needAttention && (
-    <span
+  return (
+    <div
+      ref={cardRef}
       style={{
-        fontSize: 11,
-        fontWeight: 700,
-        padding: '4px 8px',
-        borderRadius: 999,
-        background: '#fee2e2',
-        color: '#b91c1c'
+        background: '#fff',
+        padding: 16,
+        marginBottom: 16,
+        borderRadius: 12,
+        border:
+          expanded === p.id
+            ? '2px solid #2563eb'
+            : '1px solid #e5e7eb',
+        boxShadow:
+          expanded === p.id
+            ? '0 0 0 4px rgba(37,99,235,0.15)'
+            : '0 4px 10px rgba(0,0,0,0.04)',
+        transition: 'all 0.25s ease'
       }}
     >
-      Perlu Perhatian
-    </span>
-  )}
-</div>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 6
+        }}
+      >
+        <div
+          style={{
+            fontWeight: 700,
+            fontSize: 16,
+            color: '#0f172a'
+          }}
+        >
+          {p.name}
+        </div>
+
+        {needAttention && (
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              padding: '4px 8px',
+              borderRadius: 999,
+              background: '#fee2e2',
+              color: '#b91c1c'
+            }}
+          >
+            Perlu Perhatian
+          </span>
+        )}
+      </div>
+
       {p.nomorKontrak && (
         <div style={{ fontSize: 12, color: '#555' }}>
           No. Kontrak: <strong>{p.nomorKontrak}</strong>
@@ -104,42 +112,43 @@ return (
 
       <div>{p.instansi} — {p.lokasi}</div>
       <div>Kontrak: {p.tanggalMulai} → {p.tanggalSelesai}</div>
+
       <div
-  style={{
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    fontSize: 16,
-    marginTop: 1
-  }}
->
-  <span>Status Waktu:</span>
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          fontSize: 16,
+          marginTop: 1
+        }}
+      >
+        <span>Status Waktu:</span>
+        <span
+          style={{
+            fontWeight: 600,
+            color:
+              status.level === 'danger'
+                ? '#b91c1c'
+                : status.level === 'warning'
+                ? '#b45309'
+                : '#15803d'
+          }}
+        >
+          {status.label}
+        </span>
 
-  <span
-    style={{
-      fontWeight: 600,
-      color:
-        status.level === 'danger'
-          ? '#b91c1c'
-          : status.level === 'warning'
-          ? '#b45309'
-          : '#15803d'
-    }}
-  >
-    {status.label}
-  </span>
+        {status.info && (
+          <span style={{ color: '#64748b' }}>
+            ({status.info})
+          </span>
+        )}
+      </div>
 
-  {status.info && (
-    <span style={{ color: '#64748b' }}>
-      ({status.info})
-    </span>
-  )}
-</div>
       <div>Progress: {calcProgress(workflow)}%</div>
 
       <div style={{ marginTop: 4, marginBottom: 4, fontSize: 12 }}>
         Status Pembayaran:{' '}
-        <strong>{p.paymentStatus || 'Belum Bayar'}</strong>
+        <strong>{p.paymentStatus || DEFAULT_PAYMENT_STATUS}</strong>
       </div>
 
       {role === 'admin' && (
@@ -160,7 +169,7 @@ return (
                 sumberDana: p.sumberDana || '',
                 nilaiAnggaran: p.nilaiAnggaran || '',
                 tahunAnggaran: p.tahunAnggaran || '',
-                paymentStatus: p.paymentStatus || 'Belum Bayar',
+                paymentStatus: p.paymentStatus || DEFAULT_PAYMENT_STATUS,
                 division: p.division || '',
                 subDivision: p.subDivision || '',
                 tanggalMulai: p.tanggalMulai || '',
@@ -172,20 +181,20 @@ return (
           </button>
 
           {canArchiveProject(p) && (
-  <button
-    style={{ marginLeft: 8, background: '#fef3c7' }}
-    onClick={async () => {
-      if (!confirm('Arsipkan proyek ini?')) return
+            <button
+              style={{ marginLeft: 8, background: '#fef3c7' }}
+              onClick={async () => {
+                if (!confirm('Arsipkan proyek ini?')) return
 
-      await updateDoc(doc(db, 'projects', p.id), {
-        archived: true,
-        archivedAt: new Date()
-      })
-    }}
-  >
-    Arsipkan Proyek
-  </button>
-)}
+                await updateDoc(doc(db, 'projects', p.id), {
+                  archived: true,
+                  archivedAt: new Date()
+                })
+              }}
+            >
+              Arsipkan Proyek
+            </button>
+          )}
 
           <button
             style={{ marginLeft: 8 }}
@@ -206,7 +215,9 @@ return (
             <input
               placeholder="Nama Proyek"
               value={kontrakDraft.name}
-              onChange={e => setKontrakDraft({ ...kontrakDraft, name: e.target.value })}
+              onChange={e =>
+                setKontrakDraft({ ...kontrakDraft, name: e.target.value })
+              }
             />
 
             <input
@@ -223,41 +234,58 @@ return (
             <input
               placeholder="Instansi"
               value={kontrakDraft.instansi}
-              onChange={e => setKontrakDraft({ ...kontrakDraft, instansi: e.target.value })}
+              onChange={e =>
+                setKontrakDraft({ ...kontrakDraft, instansi: e.target.value })
+              }
             />
 
             <input
               placeholder="Lokasi"
               value={kontrakDraft.lokasi}
-              onChange={e => setKontrakDraft({ ...kontrakDraft, lokasi: e.target.value })}
+              onChange={e =>
+                setKontrakDraft({ ...kontrakDraft, lokasi: e.target.value })
+              }
             />
 
             <input
               placeholder="Sumber Dana"
               value={kontrakDraft.sumberDana}
-              onChange={e => setKontrakDraft({ ...kontrakDraft, sumberDana: e.target.value })}
+              onChange={e =>
+                setKontrakDraft({ ...kontrakDraft, sumberDana: e.target.value })
+              }
             />
 
             <input
               type="number"
               placeholder="Nilai Anggaran"
               value={kontrakDraft.nilaiAnggaran}
-              onChange={e => setKontrakDraft({ ...kontrakDraft, nilaiAnggaran: e.target.value })}
+              onChange={e =>
+                setKontrakDraft({ ...kontrakDraft, nilaiAnggaran: e.target.value })
+              }
             />
 
             <input
               placeholder="Tahun Anggaran"
               value={kontrakDraft.tahunAnggaran}
-              onChange={e => setKontrakDraft({ ...kontrakDraft, tahunAnggaran: e.target.value })}
+              onChange={e =>
+                setKontrakDraft({ ...kontrakDraft, tahunAnggaran: e.target.value })
+              }
             />
 
             <select
               value={kontrakDraft.paymentStatus}
-              onChange={e => setKontrakDraft({ ...kontrakDraft, paymentStatus: e.target.value })}
+              onChange={e =>
+                setKontrakDraft({
+                  ...kontrakDraft,
+                  paymentStatus: e.target.value
+                })
+              }
             >
-              <option value="Belum Bayar">Belum Bayar</option>
-              <option value="DP">DP</option>
-              <option value="Lunas">Lunas</option>
+              {PAYMENT_STATUS.map(status => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
             </select>
 
             {/* READ ONLY */}
@@ -267,13 +295,23 @@ return (
             <input
               type="date"
               value={kontrakDraft.tanggalMulai}
-              onChange={e => setKontrakDraft({ ...kontrakDraft, tanggalMulai: e.target.value })}
+              onChange={e =>
+                setKontrakDraft({
+                  ...kontrakDraft,
+                  tanggalMulai: e.target.value
+                })
+              }
             />
 
             <input
               type="number"
               value={kontrakDraft.durasiHari}
-              onChange={e => setKontrakDraft({ ...kontrakDraft, durasiHari: e.target.value })}
+              onChange={e =>
+                setKontrakDraft({
+                  ...kontrakDraft,
+                  durasiHari: e.target.value
+                })
+              }
             />
 
           </div>
@@ -295,7 +333,9 @@ return (
               style={{
                 marginTop: 12,
                 paddingLeft: 10,
-                borderLeft: editing ? '3px solid #3b82f6' : '3px solid transparent',
+                borderLeft: editing
+                  ? '3px solid #3b82f6'
+                  : '3px solid transparent',
                 opacity: locked ? 0.5 : 1,
                 cursor: locked ? 'not-allowed' : 'default'
               }}
