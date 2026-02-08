@@ -111,6 +111,12 @@ const [showDetail, setShowDetail] = useState(false)
         </div>
       )}
 
+      {p.pic && (
+  <div style={{ fontSize: 12, marginTop: 2 }}>
+    PIC: <strong>{p.pic}</strong>
+  </div>
+)}
+
       <div>{p.instansi} — {p.lokasi}</div>
       <div>Kontrak: {p.tanggalMulai} → {p.tanggalSelesai}</div>
 
@@ -178,6 +184,7 @@ const [showDetail, setShowDetail] = useState(false)
     <div><strong>Sumber Dana:</strong> {p.sumberDana || '-'}</div>
     <div><strong>Nilai Anggaran:</strong> {p.nilaiAnggaran ? formatRupiah(p.nilaiAnggaran) : '-'}</div>
     <div><strong>Tahun Anggaran:</strong> {p.tahunAnggaran || '-'}</div>
+    <div><strong>PIC:</strong> {p.pic || '-'}</div>
     <div><strong>Divisi:</strong> {p.division || '-'}</div>
     <div><strong>Sub Divisi:</strong> {p.subDivision || '-'}</div>
   </div>
@@ -215,6 +222,7 @@ const [showDetail, setShowDetail] = useState(false)
       nilaiAnggaran: p.nilaiAnggaran || '',
       tahunAnggaran: p.tahunAnggaran || '',
       paymentStatus: p.paymentStatus || DEFAULT_PAYMENT_STATUS,
+      pic: p.pic || '',
       division: p.division || '',
       subDivision: p.subDivision || '',
       tanggalMulai: p.tanggalMulai || '',
@@ -298,6 +306,14 @@ const [showDetail, setShowDetail] = useState(false)
                 setKontrakDraft({ ...kontrakDraft, sumberDana: e.target.value })
               }
             />
+
+            <input
+  placeholder="PIC (Person In Charge)"
+  value={kontrakDraft.pic}
+  onChange={e =>
+    setKontrakDraft({ ...kontrakDraft, pic: e.target.value })
+  }
+/>
 
             <input
   type="text"

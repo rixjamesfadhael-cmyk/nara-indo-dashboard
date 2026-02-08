@@ -49,6 +49,14 @@ export default function ProjectForm({
       />
 
       <input
+  placeholder="PIC (Person In Charge)"
+  value={form.pic || ''}
+  onChange={e =>
+    setForm({ ...form, pic: e.target.value })
+  }
+/>
+
+      <input
   type="text"
   inputMode="numeric"
   placeholder="Nilai Anggaran"

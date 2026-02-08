@@ -1,7 +1,7 @@
 import * as XLSX from 'xlsx-js-style'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
-
+import { formatRupiah } from '../utils/currency'
 import { safeWorkflow, calcProgress } from '../utils/project.utils'
 import { statusWaktuText } from '../utils/timeStatus'
 
@@ -27,11 +27,12 @@ export const exportExcel = projects => {
     return {
       No: i + 1,
       NamaProyek: p.name,
+      PIC: p.pic || '',
       NoKontrak: p.nomorKontrak || '',
       Instansi: p.instansi,
       Lokasi: p.lokasi,
       SumberDana: p.sumberDana,
-      NilaiAnggaran: p.nilaiAnggaran,
+      NilaiAnggaran: formatRupiah(p.nilaiAnggaran),
       TahunAnggaran: p.tahunAnggaran,
       Divisi: p.division,
       SubDivisi: p.subDivision || '-',
@@ -100,11 +101,12 @@ export const exportPDF = projects => {
       head: [['Informasi', 'Detail']],
       body: [
         ['Nama Proyek', p.name],
+        ['PIC', p.pic || '-'],
         ['No. Kontrak', p.nomorKontrak || '-'],
         ['Instansi', p.instansi],
         ['Lokasi', p.lokasi],
         ['Sumber Dana', p.sumberDana],
-        ['Nilai Anggaran', p.nilaiAnggaran],
+        ['Nilai Anggaran', formatRupiah(p.nilaiAnggaran)],
         ['Tahun Anggaran', p.tahunAnggaran],
         ['Divisi', p.division],
         ['Sub Divisi', p.subDivision || '-'],

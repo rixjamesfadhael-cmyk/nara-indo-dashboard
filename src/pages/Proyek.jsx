@@ -52,6 +52,7 @@ export default function Proyek({ role, focusProjectId, clearFocus }) {
     sumberDana: '',
     nilaiAnggaran: 0,
     tahunAnggaran: '',
+    pic: '',
     tanggalMulai: '',
     durasiHari: '',
     division: '',
@@ -114,6 +115,7 @@ export default function Proyek({ role, focusProjectId, clearFocus }) {
 
     await addDoc(collection(db, 'projects'), {
       ...form,
+      pic: form.pic || '',
       nilaiAnggaran: Number(form.nilaiAnggaran),
       durasiHari: Number(form.durasiHari),
       tanggalSelesai,
@@ -179,6 +181,7 @@ const simpanKontrak = async p => {
     nilaiAnggaran: Number(kontrakDraft.nilaiAnggaran),
     tahunAnggaran: kontrakDraft.tahunAnggaran,
     paymentStatus: kontrakDraft.paymentStatus,
+    pic: kontrakDraft.pic || '',
     tanggalMulai: kontrakDraft.tanggalMulai,
     durasiHari: Number(kontrakDraft.durasiHari),
     tanggalSelesai
