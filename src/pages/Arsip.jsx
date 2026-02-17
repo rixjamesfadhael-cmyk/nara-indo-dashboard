@@ -8,6 +8,7 @@ import {
   serverTimestamp
 } from 'firebase/firestore'
 import { db } from '../firebase'
+import EmptyState from '../components/EmptyState'
 import {
   isArchivedProject,
   canEditFinalStepInArchive,
@@ -55,51 +56,71 @@ export default function Arsip({ role }) {
       </div>
 
       {/* LIST ARSIP */}
-      <div style={wrap}>
-        {filteredArchives.map(a => (
-          <div key={a.id} style={card}>
-            <div style={head}>
-              <h3 style={title}>{a.name}</h3>
-            </div>
+<div style={wrap}>
+  {archives.length === 0 && (
+    <div style={{ gridColumn: '1 / -1' }}>
+      <EmptyState
+        title="Belum ada proyek diarsipkan"
+        description="Proyek yang selesai atau diarsipkan akan muncul di sini."
+      />
+    </div>
+  )}
 
-            <div style={row}>
-              <div>
-                <small>Nilai</small>
-                <strong>{rupiah(a.nilaiAnggaran)}</strong>
-              </div>
-              <div>
-                <small>Progress</small>
-                <strong>{a.progress || 0}%</strong>
-              </div>
-            </div>
+  {archives.length > 0 && filteredArchives.length === 0 && (
+    <div style={{ gridColumn: '1 / -1' }}>
+      <EmptyState
+        title="Tidak ditemukan di arsip"
+        description="Coba ubah kata kunci pencarian."
+        actionLabel="Reset Pencarian"
+        onAction={() => setSearch('')}
+      />
+    </div>
+  )}
 
-            <div style={progressWrap}>
-              <div
-                style={{
-                  ...progressBar,
-                  width: `${a.progress || 0}%`
-                }}
-              />
-            </div>
-
-            {role === 'admin' && (
-              <div style={actions}>
-                <button
-                  style={edit}
-                  onClick={() =>
-                    setEditingWorkflow({
-                      project: a,
-                      workflow: JSON.parse(JSON.stringify(a.workflow))
-                    })
-                  }
-                >
-                  Edit Tahapan Akhir
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
+  {filteredArchives.map(a => (
+    <div key={a.id} style={card}>
+      <div style={head}>
+        <h3 style={title}>{a.name}</h3>
       </div>
+
+      <div style={row}>
+        <div>
+          <small>Nilai</small>
+          <strong>{rupiah(a.nilaiAnggaran)}</strong>
+        </div>
+        <div>
+          <small>Progress</small>
+          <strong>{a.progress || 0}%</strong>
+        </div>
+      </div>
+
+      <div style={progressWrap}>
+        <div
+          style={{
+            ...progressBar,
+            width: `${a.progress || 0}%`
+          }}
+        />
+      </div>
+
+      {role === 'admin' && (
+        <div style={actions}>
+          <button
+            style={edit}
+            onClick={() =>
+              setEditingWorkflow({
+                project: a,
+                workflow: JSON.parse(JSON.stringify(a.workflow))
+              })
+            }
+          >
+            Edit Tahapan Akhir
+          </button>
+        </div>
+      )}
+    </div>
+  ))}
+</div>
 
       {/* MODAL EDIT TAHAPAN TERAKHIR */}
       {editingWorkflow && (
