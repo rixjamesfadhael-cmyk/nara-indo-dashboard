@@ -6,7 +6,9 @@ import {
   updateDoc,
   deleteDoc,
   doc,
-  serverTimestamp
+  serverTimestamp,
+  query,
+  orderBy
 } from 'firebase/firestore'
 import { db } from '../firebase'
 import { exportExcel, exportPDF } from '../services/project.export'
@@ -63,14 +65,19 @@ export default function Proyek({ role, focusProjectId, clearFocus }) {
   })
 
   useEffect(() => {
-    return onSnapshot(collection(db, 'projects'), snap => {
-      setProjects(
-        snap.docs.map(d =>
-          normalizeProject({ id: d.id, ...d.data() })
-        )
+  const q = query(
+    collection(db, 'projects'),
+    orderBy('createdAt', 'desc')
+  )
+
+  return onSnapshot(q, snap => {
+    setProjects(
+      snap.docs.map(d =>
+        normalizeProject({ id: d.id, ...d.data() })
       )
-    })
-  }, [])
+    )
+  })
+}, [])
 
   useEffect(() => {
   if (focusProjectId && projects.length > 0) {
