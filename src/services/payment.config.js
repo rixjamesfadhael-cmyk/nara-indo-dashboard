@@ -4,7 +4,7 @@ export const PAYMENT_STATUS = [
   'Termin 1',
   'Termin 2',
   'Termin 3',
-  'Pelunasan'
+  'Lunas'
 ]
 
 export const DEFAULT_PAYMENT_STATUS = 'Belum Bayar'

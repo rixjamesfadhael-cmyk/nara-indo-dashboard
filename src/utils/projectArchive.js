@@ -1,4 +1,5 @@
 // src/utils/projectArchive.js
+import { PAYMENT_STATUS } from '../services/payment.config'
 
 export const isWorkflowCompleted = workflow => {
   if (!Array.isArray(workflow) || workflow.length === 0) return false
@@ -9,10 +10,12 @@ export const canArchiveProject = project => {
   if (!project) return false
   if (project.archived === true) return false
 
+  const FINAL_PAYMENT_STATUS =
+    PAYMENT_STATUS[PAYMENT_STATUS.length - 1]
+
   return (
-    Number(project.progress) === 100 &&
     isWorkflowCompleted(project.workflow) &&
-    project.paymentStatus === 'Lunas'
+    project.paymentStatus === FINAL_PAYMENT_STATUS
   )
 }
 
