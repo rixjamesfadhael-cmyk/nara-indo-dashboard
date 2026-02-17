@@ -301,7 +301,8 @@ const simpanKontrak = async p => {
     marginTop: 24,
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
-    gap: 20
+    gap: 20,
+    alignItems: 'start'
   }}
 >
   {projects.length === 0 && (

@@ -42,8 +42,8 @@ const [showDetail, setShowDetail] = useState(false)
     : status.level === 'warning'
     ? '#b45309'
     : status.level === 'done'
-    ? '#2563eb'
-    : '#15803d'
+    ? '#1d4ed8'
+    : '#166534'
 
   const needAttention =
     (Number(p.progress) || 0) < 50 ||
@@ -61,25 +61,37 @@ const [showDetail, setShowDetail] = useState(false)
     }
   }, [expanded, p.id])
 
+  const buttonStyle = {
+  padding: '4px 10px',
+  borderRadius: 6,
+  border: '1px solid #e5e7eb',
+  background: '#f8fafc',
+  fontSize: 12,
+  cursor: 'pointer'
+}
+
   return (
     <div
       ref={cardRef}
       style={{
-        background: '#fff',
-        padding: 16,
-        marginBottom: 16,
-        borderRadius: 12,
-        border:
-          expanded === p.id
-            ? '2px solid #2563eb'
-            : '1px solid #e5e7eb',
-        borderLeft: `6px solid ${deadlineBorderColor}`,
-        boxShadow:
-          expanded === p.id
-            ? '0 0 0 4px rgba(37,99,235,0.15)'
-            : '0 4px 10px rgba(0,0,0,0.04)',
-        transition: 'all 0.25s ease'
-      }}
+  background: '#fff',
+  padding: 16,
+  marginBottom: 16,
+  borderRadius: 12,
+
+  border: expanded === p.id
+    ? '1px solid #2563eb'
+    : '1px solid #e5e7eb',
+
+  boxShadow: `
+  inset 4px 0 0 0 ${deadlineBorderColor},
+  ${expanded === p.id
+    ? '0 6px 18px rgba(0,0,0,0.08)'
+    : '0 1px 3px rgba(0,0,0,0.04)'}
+`,
+
+  transition: 'all 0.2s ease'
+}}
     >
       <div
         style={{
@@ -102,13 +114,13 @@ const [showDetail, setShowDetail] = useState(false)
         {needAttention && (
           <span
             style={{
-              fontSize: 11,
-              fontWeight: 700,
-              padding: '4px 8px',
-              borderRadius: 999,
-              background: '#fee2e2',
-              color: '#b91c1c'
-            }}
+  fontSize: 11,
+  fontWeight: 500,
+  padding: '3px 8px',
+  borderRadius: 999,
+  background: '#fef2f2',
+  color: '#7f1d1d'
+}}
           >
             Perlu Perhatian
           </span>
@@ -206,69 +218,89 @@ const [showDetail, setShowDetail] = useState(false)
       </div>
 
       {role === 'admin' && (
-        <>
-          <button onClick={() => editing ? setExpanded(null) : bukaTahapan(p)}>
-            {editing ? 'Tutup Tahapan' : 'Update Tahapan'}
-          </button>
+  <>
+    {/* Update Tahapan */}
+    <button
+      style={buttonStyle}
+      onClick={() =>
+        editing ? setExpanded(null) : bukaTahapan(p)
+      }
+    >
+      {editing ? 'Tutup Tahapan' : 'Update Tahapan'}
+    </button>
 
-          <button
-  style={{ marginLeft: 8 }}
-  onClick={() => {
-    if (editingKontrak === p.id) {
-      // Tutup edit kontrak tanpa simpan
-      setEditingKontrak(null)
-      setExpanded(null)
-      return
-    }
-    // Buka edit kontrak
-    setExpanded(p.id)
-    setEditingKontrak(p.id)
-    setKontrakDraft({
-      name: p.name || '',
-      nomorKontrak: p.nomorKontrak || '',
-      instansi: p.instansi || '',
-      lokasi: p.lokasi || '',
-      sumberDana: p.sumberDana || '',
-      nilaiAnggaran: p.nilaiAnggaran || '',
-      tahunAnggaran: p.tahunAnggaran || '',
-      paymentStatus: p.paymentStatus || DEFAULT_PAYMENT_STATUS,
-      pic: p.pic || '',
-      division: p.division || '',
-      subDivision: p.subDivision || '',
-      tanggalMulai: p.tanggalMulai || '',
-      durasiHari: p.durasiHari || ''
-    })
-  }}
->
-  {editingKontrak === p.id ? 'Tutup Kontrak' : 'Edit Kontrak'}
-</button>
-          {canArchiveProject(p) && (
-            <button
-              style={{ marginLeft: 8, background: '#fef3c7' }}
-              onClick={async () => {
-                if (!confirm('Arsipkan proyek ini?')) return
+    {/* Edit Kontrak */}
+    <button
+      style={{ ...buttonStyle, marginLeft: 8 }}
+      onClick={() => {
+        if (editingKontrak === p.id) {
+          setEditingKontrak(null)
+          setExpanded(null)
+          return
+        }
 
-                await updateDoc(doc(db, 'projects', p.id), {
-                  archived: true,
-                  archivedAt: new Date()
-                })
-              }}
-            >
-              Arsipkan Proyek
-            </button>
-          )}
+        setExpanded(p.id)
+        setEditingKontrak(p.id)
+        setKontrakDraft({
+          name: p.name || '',
+          nomorKontrak: p.nomorKontrak || '',
+          instansi: p.instansi || '',
+          lokasi: p.lokasi || '',
+          sumberDana: p.sumberDana || '',
+          nilaiAnggaran: p.nilaiAnggaran || '',
+          tahunAnggaran: p.tahunAnggaran || '',
+          paymentStatus:
+            p.paymentStatus || DEFAULT_PAYMENT_STATUS,
+          pic: p.pic || '',
+          division: p.division || '',
+          subDivision: p.subDivision || '',
+          tanggalMulai: p.tanggalMulai || '',
+          durasiHari: p.durasiHari || ''
+        })
+      }}
+    >
+      {editingKontrak === p.id
+        ? 'Tutup Kontrak'
+        : 'Edit Kontrak'}
+    </button>
 
-          <button
-            style={{ marginLeft: 8 }}
-            onClick={() =>
-              confirm('Hapus proyek ini?') &&
-              deleteDoc(doc(db, 'projects', p.id))
-            }
-          >
-            Hapus
-          </button>
-        </>
-      )}
+    {/* Arsipkan */}
+    {canArchiveProject(p) && (
+      <button
+        style={{
+          ...buttonStyle,
+          marginLeft: 8,
+          background: '#fef9c3'
+        }}
+        onClick={async () => {
+          if (!confirm('Arsipkan proyek ini?')) return
+
+          await updateDoc(doc(db, 'projects', p.id), {
+            archived: true,
+            archivedAt: new Date()
+          })
+        }}
+      >
+        Arsipkan Proyek
+      </button>
+    )}
+
+    {/* Hapus */}
+    <button
+      style={{
+        ...buttonStyle,
+        marginLeft: 8,
+        color: '#b91c1c'
+      }}
+      onClick={() =>
+        confirm('Hapus proyek ini?') &&
+        deleteDoc(doc(db, 'projects', p.id))
+      }
+    >
+      Hapus
+    </button>
+  </>
+)}
 
       {editingKontrak === p.id && (
         <div style={{ marginTop: 12, borderTop: '1px solid #eee', paddingTop: 12 }}>
@@ -392,7 +424,13 @@ const [showDetail, setShowDetail] = useState(false)
           </div>
 
           <button
-  style={{ marginTop: 8 }}
+  style={{
+    ...buttonStyle,
+    marginTop: 8,
+    background: '#2563eb',
+    color: '#fff',
+    border: '1px solid #2563eb'
+  }}
   onClick={async () => {
     await simpanKontrak(p)
     setEditingKontrak(null)
@@ -465,10 +503,19 @@ const [showDetail, setShowDetail] = useState(false)
         })}
 
       {editing && (
-        <button style={{ marginTop: 12 }} onClick={() => simpanTahapan(p)}>
-          Simpan Progress
-        </button>
-      )}
+  <button
+    style={{
+      ...buttonStyle,
+      marginTop: 12,
+      background: '#2563eb',
+      color: '#fff',
+      border: '1px solid #2563eb'
+    }}
+    onClick={() => simpanTahapan(p)}
+  >
+    Simpan Progress
+  </button>
+)}
     </div>
   )
 }

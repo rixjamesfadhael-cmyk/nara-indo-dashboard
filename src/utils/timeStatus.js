@@ -32,7 +32,7 @@ export const hitungStatusWaktu = p => {
 
   if (sisaHari > batasKritis) {
     return {
-      label: '🟢 Aman',
+      label: 'Aman',
       info: `Sisa ${sisaHari} hari`,
       level: 'safe'
     }
@@ -40,14 +40,14 @@ export const hitungStatusWaktu = p => {
 
   if (sisaHari > 0) {
     return {
-      label: '🟡 Kritis',
+      label: 'Kritis',
       info: `Sisa ${sisaHari} hari`,
       level: 'warning'
     }
   }
 
   return {
-    label: '🔴 Terlambat',
+    label: 'Terlambat',
     info: `Terlambat ${Math.abs(sisaHari)} hari`,
     level: 'danger'
   }
