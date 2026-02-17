@@ -9,6 +9,7 @@ import {
 } from 'firebase/firestore'
 import { db } from '../firebase'
 import EmptyState from '../components/EmptyState'
+import { exportExcel, exportPDF } from '../services/project.export'
 import {
   isArchivedProject,
   canEditFinalStepInArchive,
@@ -45,15 +46,41 @@ export default function Arsip({ role }) {
     <>
       {/* HEADER */}
       <div style={header}>
-        <h2>Arsip Proyek</h2>
+  <h2>Arsip Proyek</h2>
 
-        <input
-          placeholder="Cari proyek..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          style={searchInput}
-        />
-      </div>
+  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+    <input
+      placeholder="Cari proyek..."
+      value={search}
+      onChange={e => setSearch(e.target.value)}
+      style={searchInput}
+    />
+
+    <button
+      onClick={() => exportExcel(filteredArchives)}
+      style={{
+        padding: '6px 12px',
+        borderRadius: 6,
+        border: '1px solid #e5e7eb',
+        cursor: 'pointer'
+      }}
+    >
+      Export Excel
+    </button>
+
+    <button
+      onClick={() => exportPDF(filteredArchives)}
+      style={{
+        padding: '6px 12px',
+        borderRadius: 6,
+        border: '1px solid #e5e7eb',
+        cursor: 'pointer'
+      }}
+    >
+      Export PDF
+    </button>
+  </div>
+</div>
 
       {/* LIST ARSIP */}
 <div style={wrap}>
