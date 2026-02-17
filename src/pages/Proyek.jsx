@@ -296,7 +296,14 @@ const simpanKontrak = async p => {
         />
       )}
 
-      <div style={{ marginTop: 24 }}>
+      <div
+  style={{
+    marginTop: 24,
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
+    gap: 20
+  }}
+>
   {projects.length === 0 && (
     <EmptyState
       title="Belum ada proyek"
