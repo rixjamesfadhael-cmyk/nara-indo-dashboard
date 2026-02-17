@@ -15,6 +15,17 @@ const STATUS_COLOR = {
   Selesai: 'BDD7EE'     // biru muda
 }
 
+const buildFileName = (title, extension) => {
+  const today = new Date().toISOString().split('T')[0]
+
+  const safeTitle = title
+    .replace(/[^a-zA-Z0-9\s-]/g, '') // hapus karakter ilegal
+    .trim()
+    .replace(/\s+/g, '-') // spasi jadi dash
+
+  return `${safeTitle}-${today}.${extension}`
+}
+
 const DATA_START_ROW = 3
 /**
  * EXPORT EXCEL (FULL STYLE)
@@ -103,7 +114,8 @@ ws['!merges'] = [
 
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, 'Proyek')
-  XLSX.writeFile(wb, 'daftar-proyek-lengkap.xlsx')
+  const fileName = buildFileName(title, 'xlsx')
+XLSX.writeFile(wb, fileName)
 }
 
 /**
@@ -154,5 +166,6 @@ pdf.setFont(undefined, 'normal')
     })
   })
 
-  pdf.save('daftar-proyek-lengkap.pdf')
+  const fileName = buildFileName(title, 'pdf')
+pdf.save(fileName)
 }
