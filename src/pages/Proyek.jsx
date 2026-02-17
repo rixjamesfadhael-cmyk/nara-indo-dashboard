@@ -26,6 +26,7 @@ import {
 } from '../utils/timeStatus'
 import ProjectForm from '../components/ProjectForm'
 import ProjectCard from '../components/ProjectCard'
+import EmptyState from '../components/EmptyState'
 
 /* ================= COMPONENT ================= */
 
@@ -275,32 +276,53 @@ const simpanKontrak = async p => {
       )}
 
       <div style={{ marginTop: 24 }}>
-        {visibleProjects.map(p => (
-          <ProjectCard
-            key={p.id}
-            p={p}
-            role={role}
-            expanded={expanded}
-            drafts={drafts}
-            setExpanded={setExpanded}
-            setDrafts={setDrafts}
-            editingKontrak={editingKontrak}
-            setEditingKontrak={setEditingKontrak}
-            kontrakDraft={kontrakDraft}
-            setKontrakDraft={setKontrakDraft}
-            bukaTahapan={bukaTahapan}
-            updateDraft={updateDraft}
-            simpanTahapan={simpanTahapan}
-            simpanKontrak={simpanKontrak}
-            hitungStatusWaktu={hitungStatusWaktu}
-            calcProgress={calcProgress}
-            isStepLocked={isStepLocked}
-            deleteDoc={deleteDoc}
-            doc={doc}
-            db={db}
-          />
-        ))}
-      </div>
+  {projects.length === 0 && (
+    <EmptyState
+      title="Belum ada proyek"
+      description="Klik tombol '+ Tambah Proyek' untuk membuat proyek pertama Anda."
+      actionLabel={role === 'admin' ? '+ Tambah Proyek' : undefined}
+      onAction={role === 'admin' ? () => setAdding(true) : undefined}
+    />
+  )}
+
+  {projects.length > 0 && visibleProjects.length === 0 && (
+    <EmptyState
+      title="Tidak ada proyek ditemukan"
+      description="Coba ubah kata kunci pencarian atau nonaktifkan filter."
+      actionLabel="Reset Filter"
+      onAction={() => {
+        setFilterText('')
+        setOnlyAttention(false)
+      }}
+    />
+  )}
+
+  {visibleProjects.map(p => (
+    <ProjectCard
+      key={p.id}
+      p={p}
+      role={role}
+      expanded={expanded}
+      drafts={drafts}
+      setExpanded={setExpanded}
+      setDrafts={setDrafts}
+      editingKontrak={editingKontrak}
+      setEditingKontrak={setEditingKontrak}
+      kontrakDraft={kontrakDraft}
+      setKontrakDraft={setKontrakDraft}
+      bukaTahapan={bukaTahapan}
+      updateDraft={updateDraft}
+      simpanTahapan={simpanTahapan}
+      simpanKontrak={simpanKontrak}
+      hitungStatusWaktu={hitungStatusWaktu}
+      calcProgress={calcProgress}
+      isStepLocked={isStepLocked}
+      deleteDoc={deleteDoc}
+      doc={doc}
+      db={db}
+    />
+  ))}
+</div>
     </div>
   )
 }
