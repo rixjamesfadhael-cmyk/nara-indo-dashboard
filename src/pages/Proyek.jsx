@@ -42,6 +42,9 @@ export default function Proyek({ role, focusProjectId, clearFocus }) {
 )
   const [filterText, setFilterText] = useState('')
   const [onlyAttention, setOnlyAttention] = useState(false)
+  // ================= PAGINATION =================
+const [currentPage, setCurrentPage] = useState(1)
+const itemsPerPage = 10
   const [editingKontrak, setEditingKontrak] = useState(null)
   const [kontrakDraft, setKontrakDraft] = useState({
     tanggalMulai: '',
@@ -218,6 +221,19 @@ const simpanKontrak = async p => {
     )
   })
 
+  // ================= PAGINATION =================
+const totalPages = Math.ceil(
+  visibleProjects.length / itemsPerPage
+)
+
+const paginatedProjects = visibleProjects.slice(
+  (currentPage - 1) * itemsPerPage,
+  currentPage * itemsPerPage
+)
+
+useEffect(() => {
+  setCurrentPage(1)
+}, [filterText, onlyAttention])
     /* ================= RENDER ================= */
 
   return (
@@ -326,7 +342,7 @@ const simpanKontrak = async p => {
     />
   )}
 
-  {visibleProjects.map(p => (
+  {paginatedProjects.map(p => (
     <ProjectCard
       key={p.id}
       p={p}
@@ -352,6 +368,59 @@ const simpanKontrak = async p => {
     />
   ))}
 </div>
-    </div>
-  )
+{totalPages > 1 && (
+  <div
+    style={{
+      marginTop: 24,
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: 12
+    }}
+  >
+    <button
+      style={{
+        padding: '4px 10px',
+        borderRadius: 6,
+        border: '1px solid #e5e7eb',
+        background: '#f8fafc',
+        fontSize: 12,
+        cursor: 'pointer',
+        opacity: currentPage === 1 ? 0.5 : 1
+      }}
+      disabled={currentPage === 1}
+      onClick={() =>
+        setCurrentPage(p => Math.max(1, p - 1))
+      }
+    >
+      Prev
+    </button>
+
+    <span style={{ fontSize: 14 }}>
+      Halaman {currentPage} dari {totalPages}
+    </span>
+
+    <button
+      style={{
+        padding: '4px 10px',
+        borderRadius: 6,
+        border: '1px solid #e5e7eb',
+        background: '#f8fafc',
+        fontSize: 12,
+        cursor: 'pointer',
+        opacity: currentPage === totalPages ? 0.5 : 1
+      }}
+      disabled={currentPage === totalPages}
+      onClick={() =>
+        setCurrentPage(p =>
+          Math.min(totalPages, p + 1)
+        )
+      }
+    >
+      Next
+    </button>
+  </div>
+)}
+  </div>
+)
 }
