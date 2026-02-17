@@ -57,28 +57,28 @@ export default function Arsip({ role }) {
     />
 
     <button
-      onClick={() => exportExcel(filteredArchives)}
-      style={{
-        padding: '6px 12px',
-        borderRadius: 6,
-        border: '1px solid #e5e7eb',
-        cursor: 'pointer'
-      }}
-    >
-      Export Excel
-    </button>
+  onClick={() => {
+    const title = search
+      ? `Laporan Proyek Selesai (Arsip) – Filter: ${search}`
+      : 'Laporan Proyek Selesai (Arsip)'
 
-    <button
-      onClick={() => exportPDF(filteredArchives)}
-      style={{
-        padding: '6px 12px',
-        borderRadius: 6,
-        border: '1px solid #e5e7eb',
-        cursor: 'pointer'
-      }}
-    >
-      Export PDF
-    </button>
+    exportExcel(filteredArchives, title)
+  }}
+>
+  Export Excel
+</button>
+
+<button
+  onClick={() => {
+    const title = search
+      ? `Laporan Proyek Selesai (Arsip) – Filter: ${search}`
+      : 'Laporan Proyek Selesai (Arsip)'
+
+    exportPDF(filteredArchives, title)
+  }}
+>
+  Export PDF
+</button>
   </div>
 </div>
 

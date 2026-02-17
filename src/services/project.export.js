@@ -15,10 +15,11 @@ const STATUS_COLOR = {
   Selesai: 'BDD7EE'     // biru muda
 }
 
+const DATA_START_ROW = 3
 /**
  * EXPORT EXCEL (FULL STYLE)
  */
-export const exportExcel = projects => {
+export const exportExcel = (projects, title = 'Laporan Proyek') => {
   const rows = projects.map((p, i) => {
     const workflowText = safeWorkflow(p.workflow)
       .map(s => `${s.label}: ${s.progress}%`)
@@ -46,7 +47,26 @@ export const exportExcel = projects => {
     }
   })
 
-  const ws = XLSX.utils.json_to_sheet(rows)
+  const ws = XLSX.utils.json_to_sheet(rows, { origin: 'A3' })
+
+// Tambahkan judul di baris atas
+ws['A1'] = {
+  v: title,
+  t: 's',
+  s: {
+    font: { bold: true, sz: 16 },
+    alignment: { horizontal: 'center' }
+  }
+}
+
+// Merge judul sampai kolom terakhir
+const lastCol = Object.keys(rows[0]).length - 1
+ws['!merges'] = [
+  {
+    s: { r: 0, c: 0 },
+    e: { r: 0, c: lastCol }
+  }
+]
 
   // cari index kolom StatusWaktu
   const header = Object.keys(rows[0])
@@ -60,7 +80,7 @@ export const exportExcel = projects => {
     if (!color) return
 
     const cellRef = XLSX.utils.encode_cell({
-      r: rowIndex + 1, // +1 karena header
+      r: rowIndex + DATA_START_ROW,
       c: statusColIndex
     })
 
@@ -89,14 +109,18 @@ export const exportExcel = projects => {
 /**
  * EXPORT PDF (GRID BERSIH)
  */
-export const exportPDF = projects => {
+export const exportPDF = (projects, title = 'Laporan Proyek') => {
   const pdf = new jsPDF()
+  pdf.setFontSize(16)
+pdf.setFont(undefined, 'bold')
+pdf.text(title, 14, 10)
+pdf.setFont(undefined, 'normal')
 
   projects.forEach((p, idx) => {
     if (idx > 0) pdf.addPage()
 
     autoTable(pdf, {
-      startY: 14,
+      startY: 18,
       theme: 'grid',
       head: [['Informasi', 'Detail']],
       body: [

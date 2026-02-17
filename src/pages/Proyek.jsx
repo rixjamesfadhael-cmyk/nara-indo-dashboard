@@ -246,12 +246,26 @@ const simpanKontrak = async p => {
   Perlu Perhatian
 </button>
 
-        <button onClick={() => exportExcel(visibleProjects)}>
+        <button
+  onClick={() => {
+    const title = filterText
+      ? `Laporan Proyek Aktif – Filter: ${filterText}`
+      : 'Laporan Proyek Aktif'
+
+    exportExcel(visibleProjects, title)
+  }}
+>
   Export Excel
 </button>
 
 <button
-  onClick={() => exportPDF(visibleProjects)}
+  onClick={() => {
+    const title = filterText
+      ? `Laporan Proyek Aktif – Filter: ${filterText}`
+      : 'Laporan Proyek Aktif'
+
+    exportPDF(visibleProjects, title)
+  }}
   style={{ marginLeft: 8 }}
 >
   Export PDF
