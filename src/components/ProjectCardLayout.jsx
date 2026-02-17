@@ -36,6 +36,15 @@ const [showDetail, setShowDetail] = useState(false)
 
   const status = hitungStatusWaktu(p)
 
+ const deadlineBorderColor =
+  status.level === 'danger'
+    ? '#b91c1c'
+    : status.level === 'warning'
+    ? '#b45309'
+    : status.level === 'done'
+    ? '#2563eb'
+    : '#15803d'
+
   const needAttention =
     (Number(p.progress) || 0) < 50 ||
     status?.level === 'warning' ||
@@ -64,6 +73,7 @@ const [showDetail, setShowDetail] = useState(false)
           expanded === p.id
             ? '2px solid #2563eb'
             : '1px solid #e5e7eb',
+        borderLeft: `6px solid ${deadlineBorderColor}`,
         boxShadow:
           expanded === p.id
             ? '0 0 0 4px rgba(37,99,235,0.15)'
