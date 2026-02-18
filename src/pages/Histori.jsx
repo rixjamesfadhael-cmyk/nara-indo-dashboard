@@ -4,11 +4,13 @@ import { db } from '../firebase'
 
 export default function Histori() {
   const [logs, setLogs] = useState([])
-
   const [type, setType] = useState('')
   const [project, setProject] = useState('')
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
+  // ================= PAGINATION =================
+const [currentPage, setCurrentPage] = useState(1)
+const itemsPerPage = 8
 
  useEffect(() => {
   const q = query(
@@ -32,6 +34,10 @@ export default function Histori() {
     })
   }, [])
 
+  useEffect(() => {
+  setCurrentPage(1)
+}, [type, project, fromDate, toDate])
+
   const projectOptions = [
     ...new Set(logs.map(l => l.projectName).filter(Boolean))
   ]
@@ -41,7 +47,6 @@ export default function Histori() {
   const displayedLogs = isFiltering
     ? logs.filter(l => {
         const logDate = l.createdAt?.toDate?.()
-
         if (type && l.action !== type) return false
         if (project && l.projectName !== project) return false
 
@@ -61,6 +66,14 @@ export default function Histori() {
       })
     : logs
 
+    const totalPages = Math.ceil(
+  displayedLogs.length / itemsPerPage
+)
+
+const paginatedLogs = displayedLogs.slice(
+  (currentPage - 1) * itemsPerPage,
+  currentPage * itemsPerPage
+)
   return (
     <div>
       <h2 style={{ marginBottom: 12 }}>Histori Aktivitas</h2>
@@ -123,36 +136,99 @@ export default function Histori() {
       </div>
 
       {/* LIST */}
-      {displayedLogs.length === 0 ? (
-        <div style={{ color: '#64748b', fontSize: 14 }}>
-          Tidak ada histori pada filter ini
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gap: 12 }}>
-          {displayedLogs.map(l => (
-            <div key={l.id} style={card}>
-              <div style={cardHeader}>
-                <span style={badge(l.action)}>{l.action}</span>
-                <span style={date}>
-                  {l.createdAt?.toDate
-                    ? l.createdAt
-                        .toDate()
-                        .toLocaleString('id-ID')
-                    : '-'}
-                </span>
-              </div>
+{displayedLogs.length === 0 ? (
+  <div style={{ color: '#64748b', fontSize: 14 }}>
+    Tidak ada histori pada filter ini
+  </div>
+) : (
+  <>
+    <div style={{ display: 'grid', gap: 12 }}>
+      {paginatedLogs.map(l => (
+        <div key={l.id} style={card}>
+          <div style={cardHeader}>
+            <span style={badge(l.action)}>{l.action}</span>
+            <span style={date}>
+              {l.createdAt?.toDate
+                ? l.createdAt
+                    .toDate()
+                    .toLocaleString('id-ID')
+                : '-'}
+            </span>
+          </div>
 
-              <strong>{l.projectName}</strong>
-              <div style={desc}>{l.description}</div>
-              <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
-  Oleh: {l.userEmail || '-'}
-</div>
-            </div>
-          ))}
+          <strong>{l.projectName}</strong>
+
+          <div style={desc}>{l.description}</div>
+
+          <div
+            style={{
+              fontSize: 12,
+              color: '#64748b',
+              marginTop: 4
+            }}
+          >
+            Oleh: {l.userEmail || '-'}
+          </div>
         </div>
-      )}
+      ))}
     </div>
-  )
+
+    {totalPages > 1 && (
+      <div
+        style={{
+          marginTop: 24,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: 12,
+          flexWrap: 'wrap'
+        }}
+      >
+        <button
+          disabled={currentPage === 1}
+          onClick={() =>
+            setCurrentPage(p => Math.max(1, p - 1))
+          }
+          style={{
+            padding: '4px 10px',
+            borderRadius: 6,
+            border: '1px solid #e5e7eb',
+            background: '#f8fafc',
+            cursor: 'pointer',
+            opacity: currentPage === 1 ? 0.5 : 1
+          }}
+        >
+          Prev
+        </button>
+
+        <span style={{ fontSize: 14 }}>
+          Halaman {currentPage} dari {totalPages}
+        </span>
+
+        <button
+          disabled={currentPage === totalPages}
+          onClick={() =>
+            setCurrentPage(p =>
+              Math.min(totalPages, p + 1)
+            )
+          }
+          style={{
+            padding: '4px 10px',
+            borderRadius: 6,
+            border: '1px solid #e5e7eb',
+            background: '#f8fafc',
+            cursor: 'pointer',
+            opacity: currentPage === totalPages ? 0.5 : 1
+          }}
+        >
+          Next
+        </button>
+      </div>
+    )}
+  </>
+)}
+</div>
+)
 }
 
 /* STYLE */
