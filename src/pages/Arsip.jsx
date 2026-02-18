@@ -27,6 +27,9 @@ export default function Arsip({ role }) {
   const [archives, setArchives] = useState([])
   const [editingWorkflow, setEditingWorkflow] = useState(null)
   const [search, setSearch] = useState('')
+    // ================= PAGINATION =================
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 6
 
   useEffect(() => {
     return onSnapshot(collection(db, 'projects'), snap => {
@@ -38,9 +41,21 @@ export default function Arsip({ role }) {
     })
   }, [])
 
+  useEffect(() => {
+  setCurrentPage(1)
+}, [search])
+
   const filteredArchives = archives.filter(a =>
     a.name?.toLowerCase().includes(search.toLowerCase())
   )
+  const totalPages = Math.ceil(
+  filteredArchives.length / itemsPerPage
+)
+
+const paginatedArchives = filteredArchives.slice(
+  (currentPage - 1) * itemsPerPage,
+  currentPage * itemsPerPage
+)
 
   return (
     <>
@@ -111,7 +126,7 @@ export default function Arsip({ role }) {
     </div>
   )}
 
-  {filteredArchives.map(a => (
+  {paginatedArchives.map(a => (
     <div key={a.id} style={card}>
       <div style={head}>
         <h3 style={title}>{a.name}</h3>
@@ -156,6 +171,57 @@ export default function Arsip({ role }) {
   ))}
 </div>
 
+{totalPages > 1 && (
+  <div
+    style={{
+      marginTop: 24,
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: 12
+    }}
+  >
+    <button
+      disabled={currentPage === 1}
+      onClick={() =>
+        setCurrentPage(p => Math.max(1, p - 1))
+      }
+      style={{
+        padding: '4px 10px',
+        borderRadius: 6,
+        border: '1px solid #e5e7eb',
+        background: '#f8fafc',
+        cursor: 'pointer',
+        opacity: currentPage === 1 ? 0.5 : 1
+      }}
+    >
+      Prev
+    </button>
+
+    <span>
+      Halaman {currentPage} dari {totalPages}
+    </span>
+
+    <button
+      disabled={currentPage === totalPages}
+      onClick={() =>
+        setCurrentPage(p =>
+          Math.min(totalPages, p + 1)
+        )
+      }
+      style={{
+        padding: '4px 10px',
+        borderRadius: 6,
+        border: '1px solid #e5e7eb',
+        background: '#f8fafc',
+        cursor: 'pointer',
+        opacity: currentPage === totalPages ? 0.5 : 1
+      }}
+    >
+      Next
+    </button>
+  </div>
+)}
       {/* MODAL EDIT TAHAPAN TERAKHIR */}
       {editingWorkflow && (
         <div style={overlay}>
