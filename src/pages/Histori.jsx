@@ -144,6 +144,9 @@ export default function Histori() {
 
               <strong>{l.projectName}</strong>
               <div style={desc}>{l.description}</div>
+              <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
+  Oleh: {l.userEmail || '-'}
+</div>
             </div>
           ))}
         </div>

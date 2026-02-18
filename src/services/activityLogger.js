@@ -1,5 +1,5 @@
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
-import { db } from '../firebase'
+import { db, auth } from '../firebase'
 
 export async function logActivity({
   action,
@@ -7,11 +7,14 @@ export async function logActivity({
   projectName,
   description
 }) {
+  const user = auth.currentUser
+
   await addDoc(collection(db, 'activity_logs'), {
     action,
     projectId,
     projectName,
     description,
+    userEmail: user?.email || 'Unknown',
     createdAt: serverTimestamp()
   })
 }
