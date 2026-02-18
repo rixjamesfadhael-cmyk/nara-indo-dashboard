@@ -48,7 +48,14 @@ export default function Arsip({ role }) {
       <div style={header}>
   <h2>Arsip Proyek</h2>
 
-  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+  <div
+  style={{
+    display: 'flex',
+    gap: 8,
+    alignItems: 'center',
+    flexWrap: 'wrap'
+  }}
+>
     <input
       placeholder="Cari proyek..."
       value={search}
@@ -162,7 +169,14 @@ export default function Arsip({ role }) {
               )
 
               return (
-                <div key={idx}>
+                <div
+  key={idx}
+  style={{
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6
+  }}
+>
                   <small>{step.label}</small>
 
                   <input
@@ -170,6 +184,7 @@ export default function Arsip({ role }) {
                     min="0"
                     max="100"
                     step="5"
+                    style={{ width: '100%' }}
                     value={step.progress}
                     disabled={!canEdit}
                     onChange={e => {
@@ -187,6 +202,7 @@ export default function Arsip({ role }) {
 
                   <input
                     type="number"
+                    style={{ width: '100%' }}
                     value={step.progress}
                     disabled={!canEdit}
                     onChange={e => {
@@ -251,18 +267,22 @@ const header = {
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
+  flexWrap: 'wrap',
+  gap: 12,
   marginBottom: 20
 }
 
 const searchInput = {
   padding: 8,
   borderRadius: 8,
-  border: '1px solid #e5e7eb'
+  border: '1px solid #e5e7eb',
+  width: '100%',
+  maxWidth: 320
 }
 
 const wrap = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
   gap: 20
 }
 
