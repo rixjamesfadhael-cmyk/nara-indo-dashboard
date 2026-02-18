@@ -44,6 +44,11 @@ body {
   color: inherit;
 }
 
+.sidebar .item svg {
+  flex-shrink: 0;
+  min-width: 18px;
+}
+
 .sidebar .item:hover {
   background: rgba(255,255,255,0.08);
   color: #fff;
