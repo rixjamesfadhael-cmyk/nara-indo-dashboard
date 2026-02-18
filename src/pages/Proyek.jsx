@@ -29,6 +29,7 @@ import {
 import ProjectForm from '../components/ProjectForm'
 import ProjectCard from '../components/ProjectCard'
 import EmptyState from '../components/EmptyState'
+import { logActivity } from '../services/activityLogger'
 
 /* ================= COMPONENT ================= */
 
@@ -125,16 +126,23 @@ const itemsPerPage = 10
       form.durasiHari
     )
 
-    await addDoc(collection(db, 'projects'), {
-      ...form,
-      pic: form.pic || '',
-      nilaiAnggaran: Number(form.nilaiAnggaran),
-      durasiHari: Number(form.durasiHari),
-      tanggalSelesai,
-      workflow,
-      progress: calcProgress(workflow),
-      createdAt: serverTimestamp()
-    })
+    const docRef = await addDoc(collection(db, 'projects'), {
+  ...form,
+  pic: form.pic || '',
+  nilaiAnggaran: Number(form.nilaiAnggaran),
+  durasiHari: Number(form.durasiHari),
+  tanggalSelesai,
+  workflow,
+  progress: calcProgress(workflow),
+  createdAt: serverTimestamp()
+})
+
+await logActivity({
+  action: 'CREATE',
+  projectId: docRef.id,
+  projectName: form.name,
+  description: 'Membuat proyek baru'
+})
 
     setForm({
       name: '',
@@ -172,9 +180,16 @@ const itemsPerPage = 10
   const simpanTahapan = async p => {
     const wf = drafts[p.id]
     await updateDoc(doc(db, 'projects', p.id), {
-      workflow: wf,
-      progress: calcProgress(wf)
-    })
+  workflow: wf,
+  progress: calcProgress(wf)
+})
+
+await logActivity({
+  action: 'UPDATE',
+  projectId: p.id,
+  projectName: p.name,
+  description: 'Memperbarui progress tahapan proyek'
+})
     setExpanded(null)
   }
 
@@ -198,6 +213,13 @@ const simpanKontrak = async p => {
     durasiHari: Number(kontrakDraft.durasiHari),
     tanggalSelesai
   })
+
+  await logActivity({
+  action: 'UPDATE',
+  projectId: p.id,
+  projectName: kontrakDraft.name,
+  description: 'Memperbarui data kontrak proyek'
+})
 
   setEditingKontrak(null)
 }

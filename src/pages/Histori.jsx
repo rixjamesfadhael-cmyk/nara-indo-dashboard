@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { collection, onSnapshot } from 'firebase/firestore'
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore'
 import { db } from '../firebase'
 
 export default function Histori() {
@@ -10,14 +10,22 @@ export default function Histori() {
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
 
-  useEffect(() => {
-    return onSnapshot(collection(db, 'activity_logs'), snap => {
+ useEffect(() => {
+  const q = query(
+    collection(db, 'activity_logs'),
+    orderBy('createdAt', 'desc')
+  )
+
+  return onSnapshot(q, snap => {
       const realtimeLogs = snap.docs
         .map(d => ({ id: d.id, ...d.data() }))
-        .filter(l =>
-          l.action === 'CREATE' ||
-          l.action === 'UPDATE' ||
-          l.action === 'DELETE'
+        .filter(
+          l =>
+            l.action === 'CREATE' ||
+            l.action === 'UPDATE' ||
+            l.action === 'DELETE' ||
+            l.action === 'ARCHIVE' ||
+            l.action === 'RESTORE'
         )
 
       setLogs(realtimeLogs)
@@ -68,6 +76,8 @@ export default function Histori() {
           <option value="CREATE">Create</option>
           <option value="UPDATE">Update</option>
           <option value="DELETE">Delete</option>
+          <option value="ARCHIVE">Archive</option>
+          <option value="RESTORE">Restore</option>
         </select>
 
         <select
@@ -191,7 +201,11 @@ const badge = action => ({
       ? '#16a34a'
       : action === 'UPDATE'
       ? '#2563eb'
-      : '#dc2626'
+      : action === 'DELETE'
+      ? '#dc2626'
+      : action === 'ARCHIVE'
+      ? '#0f766e'
+      : '#7c3aed'
 })
 
 const date = {

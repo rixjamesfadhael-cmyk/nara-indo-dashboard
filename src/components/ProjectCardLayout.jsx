@@ -1,6 +1,7 @@
 import { updateDoc } from 'firebase/firestore'
 import { canArchiveProject } from '../utils/projectArchive'
 import { useEffect, useRef, useState } from 'react'
+import { logActivity } from '../services/activityLogger'
 import { formatRupiah, formatNumber, parseNumber } from '../utils/currency'
 import {
   PAYMENT_STATUS,
@@ -273,13 +274,20 @@ const [showDetail, setShowDetail] = useState(false)
           background: '#fef9c3'
         }}
         onClick={async () => {
-          if (!confirm('Arsipkan proyek ini?')) return
+  if (!confirm('Arsipkan proyek ini?')) return
 
-          await updateDoc(doc(db, 'projects', p.id), {
-            archived: true,
-            archivedAt: new Date()
-          })
-        }}
+  await updateDoc(doc(db, 'projects', p.id), {
+    archived: true,
+    archivedAt: new Date()
+  })
+
+  await logActivity({
+    action: 'ARCHIVE',
+    projectId: p.id,
+    projectName: p.name,
+    description: 'Mengarsipkan proyek'
+  })
+}}
       >
         Arsipkan Proyek
       </button>
@@ -292,10 +300,18 @@ const [showDetail, setShowDetail] = useState(false)
         marginLeft: 8,
         color: '#b91c1c'
       }}
-      onClick={() =>
-        confirm('Hapus proyek ini?') &&
-        deleteDoc(doc(db, 'projects', p.id))
-      }
+      onClick={async () => {
+  if (!confirm('Hapus proyek ini?')) return
+
+  await logActivity({
+    action: 'DELETE',
+    projectId: p.id,
+    projectName: p.name,
+    description: 'Menghapus proyek'
+  })
+
+  await deleteDoc(doc(db, 'projects', p.id))
+}}
     >
       Hapus
     </button>
