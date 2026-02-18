@@ -3,7 +3,7 @@ export default function Layout({ sidebar, header, children }) {
     <>
       {sidebar}
 
-      <div style={main}>
+      <div className="main-content" style={main}>
         <div style={headerWrap}>{header}</div>
         <div style={content}>{children}</div>
       </div>
@@ -12,8 +12,6 @@ export default function Layout({ sidebar, header, children }) {
 }
 
 const main = {
-  marginLeft: window.innerWidth <= 768 ? 60 : 64,
-  minHeight: '100dvh',
   display: 'flex',
   flexDirection: 'column',
   background: '#f8fafc'

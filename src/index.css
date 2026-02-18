@@ -1,14 +1,12 @@
 html, body {
+  margin: 0;
+  padding: 0;
   overflow-x: hidden;
-}
-* 
-{
-  box-sizing: border-box;
+  font-family: Arial, sans-serif;
 }
 
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
+* {
+  box-sizing: border-box;
 }
 
 /* === SIDEBAR FIXED === */
@@ -78,6 +76,34 @@ body {
   color: #fca5a5;
 }
 
-span:hover > .tooltip-content {
-  opacity: 1;
+/* === MAIN CONTENT OFFSET === */
+.main-content {
+  margin-left: 64px;
+  min-height: 100dvh;
+}
+
+.main-content {
+  overflow-x: hidden;
+}
+
+.project-grid {
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+}
+
+@media (max-width: 768px) {
+  .project-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 48px;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 48px;
+  }
 }

@@ -313,10 +313,10 @@ useEffect(() => {
       )}
 
       <div
+  className="project-grid"
   style={{
     marginTop: 24,
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
     gap: 20,
     alignItems: 'start'
   }}
