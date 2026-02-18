@@ -12,8 +12,8 @@ export default function Layout({ sidebar, header, children }) {
 }
 
 const main = {
-  marginLeft: 64,        // ⬅️ kunci sidebar fixed
-  minHeight: '100vh',
+  marginLeft: window.innerWidth <= 768 ? 60 : 64,
+  minHeight: '100dvh',
   display: 'flex',
   flexDirection: 'column',
   background: '#f8fafc'

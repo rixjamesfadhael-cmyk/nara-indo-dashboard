@@ -1,4 +1,8 @@
-* {
+html, body {
+  overflow-x: hidden;
+}
+* 
+{
   box-sizing: border-box;
 }
 
@@ -12,7 +16,7 @@ body {
   position: fixed;
   top: 0;
   left: 0;
-  height: 100vh;
+  height: 100dvh;
   width: 64px;
   background: #0f172a;
   color: #94a3b8;
