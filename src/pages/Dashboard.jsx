@@ -212,10 +212,26 @@ const statusData = {
 /* ================= COMPONENT KECIL ================= */
 
 function Card({ title, value }) {
+  const length = String(value).length
+
+  let size = 28
+
+  if (length > 16) size = 18
+  else if (length > 12) size = 22
+  else if (length > 9) size = 24
+
   return (
     <div style={card}>
       <div style={cardTitle}>{title}</div>
-      <div style={cardValue}>{value}</div>
+
+      <div
+        style={{
+          ...cardValue,
+          fontSize: size
+        }}
+      >
+        {value}
+      </div>
     </div>
   )
 }
