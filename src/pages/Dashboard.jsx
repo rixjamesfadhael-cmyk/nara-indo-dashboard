@@ -38,12 +38,17 @@ export default function Dashboard({ goToProject }) {
   }, [])
 
   const {
-    activeProjects,
-    archivedProjects,
-    totalNilaiAktif,
-    avgProgress,
-    butuhPerhatian
-  } = buildDashboardSummary(projects)
+  activeProjects,
+  archivedProjects,
+  totalNilaiAktif,
+  avgProgress,
+  butuhPerhatian,
+  safeProjects,
+  dangerProjects,
+  doneProjects,
+  lowestProgressProject,
+  nearestDeadline
+} = buildDashboardSummary(projects)
 
   /* ================= PIE CHART (AKTIF vs ARSIP) ================= */
 
@@ -59,6 +64,26 @@ export default function Dashboard({ goToProject }) {
       }
     ]
   }
+
+  /* ================= STATUS DISTRIBUTION ================= */
+
+const statusData = {
+  labels: ['Safe', 'Danger', 'Done'],
+  datasets: [
+    {
+      data: [
+        safeProjects.length,
+        dangerProjects.length,
+        doneProjects.length
+      ],
+      backgroundColor: [
+        '#16a34a',
+        '#dc2626',
+        '#2563eb'
+      ]
+    }
+  ]
+}
 
   /* ================= LINE CHART (PROYEK AKTIF) ================= */
 
@@ -86,6 +111,16 @@ export default function Dashboard({ goToProject }) {
         <Card title="Total Nilai Aktif" value={rupiah(totalNilaiAktif)} />
         <Card title="Proyek Arsip" value={archivedProjects.length} />
         <Card title="Rata-rata Progress" value={`${avgProgress}%`} />
+        <Card title="Perlu Perhatian" value={butuhPerhatian.length} />
+
+<Card
+  title="Progress Terendah"
+  value={
+    lowestProgressProject
+      ? `${lowestProgressProject.progress || 0}%`
+      : '-'
+  }
+/>
       </div>
 
       {/* ACTIONABLE */}
@@ -131,18 +166,45 @@ export default function Dashboard({ goToProject }) {
         )}
       </div>
 
+      <div style={card}>
+  <h3>Deadline Terdekat</h3>
+
+  {nearestDeadline.length === 0 ? (
+    <small>Tidak ada deadline</small>
+  ) : (
+    nearestDeadline.map(p => (
+      <div
+        key={p.id}
+        style={{
+          fontSize: 14,
+          marginBottom: 6
+        }}
+      >
+        • {p.name}
+      </div>
+    ))
+  )}
+</div>
+
       {/* CHART */}
       <div style={chartWrap}>
-        <div style={chartCard}>
-          <h3>Komposisi Proyek</h3>
-          <Pie data={pieData} />
-        </div>
 
-        <div style={chartCard}>
-          <h3>Progress Proyek Aktif</h3>
-          <Line data={lineData} />
-        </div>
-      </div>
+  <div style={chartCard}>
+    <h3>Komposisi Proyek</h3>
+    <Pie data={pieData} />
+  </div>
+
+  <div style={chartCard}>
+    <h3>Status Proyek</h3>
+    <Pie data={statusData} />
+  </div>
+
+  <div style={chartCard}>
+    <h3>Progress Proyek Aktif</h3>
+    <Line data={lineData} />
+  </div>
+
+</div>
     </div>
   )
 }
