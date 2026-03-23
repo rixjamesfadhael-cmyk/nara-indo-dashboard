@@ -1,164 +1,107 @@
 import { useEffect, useState } from 'react'
 import {
   Chart as ChartJS,
-  ArcElement,
-  Tooltip,
-  Legend,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement
+  ArcElement, Tooltip, Legend,
+  CategoryScale, LinearScale, PointElement, LineElement
 } from 'chart.js'
 import { Pie, Line } from 'react-chartjs-2'
 import { subscribeProjects } from '../services/project.service'
 import { buildDashboardSummary } from '../services/dashboard.logic'
 
-ChartJS.register(
-  ArcElement,
-  Tooltip,
-  Legend,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement
-)
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement)
 
 const rupiah = (n = 0) =>
-  new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0
-  }).format(n)
+  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n)
+
+function useIsDark() {
+  const [isDark, setIsDark] = useState(
+    () => document.body.getAttribute('data-theme') === 'dark'
+  )
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.body.getAttribute('data-theme') === 'dark')
+    })
+    observer.observe(document.body, { attributes: true, attributeFilter: ['data-theme'] })
+    return () => observer.disconnect()
+  }, [])
+  return isDark
+}
 
 export default function Dashboard({ goToProject }) {
   const [projects, setProjects] = useState([])
+  const isDark = useIsDark()
 
-  useEffect(() => {
-    return subscribeProjects(setProjects)
-  }, [])
+  useEffect(() => { return subscribeProjects(setProjects) }, [])
 
   const {
-  activeProjects,
-  archivedProjects,
-  totalNilaiAktif,
-  avgProgress,
-  butuhPerhatian,
-  safeProjects,
-  dangerProjects,
-  doneProjects,
-  lowestProgressProject,
-  nearestDeadline
-} = buildDashboardSummary(projects)
+    activeProjects, archivedProjects, totalNilaiAktif,
+    avgProgress, butuhPerhatian, safeProjects,
+    dangerProjects, doneProjects, lowestProgressProject, nearestDeadline
+  } = buildDashboardSummary(projects)
 
-  /* ================= PIE CHART (AKTIF vs ARSIP) ================= */
+  const labelColor = isDark ? '#e2e8f0' : '#1e293b'
+  const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+
+  const chartOptions = {
+    plugins: {
+      legend: { labels: { color: labelColor, font: { size: 12 } } }
+    }
+  }
+
+  const lineOptions = {
+    plugins: {
+      legend: { labels: { color: labelColor, font: { size: 12 } } }
+    },
+    scales: {
+      x: { ticks: { color: labelColor }, grid: { color: gridColor } },
+      y: { ticks: { color: labelColor }, grid: { color: gridColor } }
+    }
+  }
 
   const pieData = {
     labels: ['Aktif', 'Arsip'],
-    datasets: [
-      {
-        data: [
-          activeProjects.length,
-          archivedProjects.length
-        ],
-        backgroundColor: ['#2563eb', '#16a34a']
-      }
-    ]
+    datasets: [{ data: [activeProjects.length, archivedProjects.length], backgroundColor: ['#2563eb', '#16a34a'] }]
   }
 
-  /* ================= STATUS DISTRIBUTION ================= */
-
-const statusData = {
-  labels: ['Safe', 'Danger', 'Done'],
-  datasets: [
-    {
-      data: [
-        safeProjects.length,
-        dangerProjects.length,
-        doneProjects.length
-      ],
-      backgroundColor: [
-        '#16a34a',
-        '#dc2626',
-        '#2563eb'
-      ]
-    }
-  ]
-}
-
-  /* ================= LINE CHART (PROYEK AKTIF) ================= */
+  const statusData = {
+    labels: ['Safe', 'Danger', 'Done'],
+    datasets: [{ data: [safeProjects.length, dangerProjects.length, doneProjects.length], backgroundColor: ['#16a34a', '#dc2626', '#2563eb'] }]
+  }
 
   const lineData = {
     labels: activeProjects.slice(0, 10).map(p => p.name),
-    datasets: [
-      {
-        label: 'Progress (%)',
-        data: activeProjects
-          .slice(0, 10)
-          .map(p => p.progress || 0),
-        borderColor: '#2563eb',
-        backgroundColor: 'rgba(37,99,235,0.2)',
-        tension: 0.4,
-        fill: true
-      }
-    ]
+    datasets: [{
+      label: 'Progress (%)',
+      data: activeProjects.slice(0, 10).map(p => p.progress || 0),
+      borderColor: '#2563eb',
+      backgroundColor: 'rgba(37,99,235,0.2)',
+      tension: 0.4, fill: true
+    }]
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-      {/* SUMMARY */}
-      <div style={cardWrap}>
+      {/* SUMMARY CARDS */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
         <Card title="Proyek Aktif" value={activeProjects.length} />
         <Card title="Total Nilai Aktif" value={rupiah(totalNilaiAktif)} />
         <Card title="Proyek Arsip" value={archivedProjects.length} />
         <Card title="Rata-rata Progress" value={`${avgProgress}%`} />
         <Card title="Perlu Perhatian" value={butuhPerhatian.length} />
-
-<Card
-  title="Progress Terendah"
-  value={
-    lowestProgressProject
-      ? `${lowestProgressProject.progress || 0}%`
-      : '-'
-  }
-/>
+        <Card title="Progress Terendah" value={lowestProgressProject ? `${lowestProgressProject.progress || 0}%` : '-'} />
       </div>
 
-      {/* ACTIONABLE */}
-      <div style={card}>
-        <h3>Perlu Perhatian</h3>
-
+      {/* PERLU PERHATIAN */}
+      <div className="app-card">
+        <h3 style={{ margin: '0 0 12px', color: 'var(--text)' }}>Perlu Perhatian</h3>
         {butuhPerhatian.length === 0 ? (
-          <small>Semua proyek dalam kondisi baik</small>
+          <small style={{ color: 'var(--text-muted)' }}>Semua proyek dalam kondisi baik</small>
         ) : (
           butuhPerhatian.map(p => (
-            <div
-              key={p.id}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                fontSize: 14,
-                marginBottom: 6
-              }}
-            >
-              <span>
-                • {p.name} ({p.progress || 0}%)
-              </span>
-
-              <button
-                onClick={() =>
-                  goToProject(p.id, { autoEdit: true })
-                }
-                style={{
-                  fontSize: 12,
-                  color: '#2563eb',
-                  fontWeight: 600,
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: 0
-                }}
-              >
+            <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 14, marginBottom: 6 }}>
+              <span style={{ color: 'var(--text)' }}>• {p.name} ({p.progress || 0}%)</span>
+              <button onClick={() => goToProject(p.id, { autoEdit: true })}
+                style={{ fontSize: 12, color: '#2563eb', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
                 Lihat
               </button>
             </div>
@@ -166,114 +109,47 @@ const statusData = {
         )}
       </div>
 
-      <div style={card}>
-  <h3>Deadline Terdekat</h3>
-
-  {nearestDeadline.length === 0 ? (
-    <small>Tidak ada deadline</small>
-  ) : (
-    nearestDeadline.map(p => (
-      <div
-        key={p.id}
-        style={{
-          fontSize: 14,
-          marginBottom: 6
-        }}
-      >
-        • {p.name}
+      {/* DEADLINE */}
+      <div className="app-card">
+        <h3 style={{ margin: '0 0 12px', color: 'var(--text)' }}>Deadline Terdekat</h3>
+        {nearestDeadline.length === 0 ? (
+          <small style={{ color: 'var(--text-muted)' }}>Tidak ada deadline</small>
+        ) : (
+          nearestDeadline.map(p => (
+            <div key={p.id} style={{ fontSize: 14, marginBottom: 6, color: 'var(--text)' }}>• {p.name}</div>
+          ))
+        )}
       </div>
-    ))
-  )}
-</div>
 
-      {/* CHART */}
-      <div style={chartWrap}>
-
-  <div style={chartCard}>
-    <h3>Komposisi Proyek</h3>
-    <Pie data={pieData} />
-  </div>
-
-  <div style={chartCard}>
-    <h3>Status Proyek</h3>
-    <Pie data={statusData} />
-  </div>
-
-  <div style={chartCard}>
-    <h3>Progress Proyek Aktif</h3>
-    <Line data={lineData} />
-  </div>
-
-</div>
+      {/* CHARTS */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20 }}>
+        <div className="app-card">
+          <h3 style={{ margin: '0 0 12px', color: 'var(--text)' }}>Komposisi Proyek</h3>
+          <Pie data={pieData} options={chartOptions} />
+        </div>
+        <div className="app-card">
+          <h3 style={{ margin: '0 0 12px', color: 'var(--text)' }}>Status Proyek</h3>
+          <Pie data={statusData} options={chartOptions} />
+        </div>
+        <div className="app-card">
+          <h3 style={{ margin: '0 0 12px', color: 'var(--text)' }}>Progress Proyek Aktif</h3>
+          <Line data={lineData} options={lineOptions} />
+        </div>
+      </div>
     </div>
   )
 }
-
-/* ================= COMPONENT KECIL ================= */
 
 function Card({ title, value }) {
   const length = String(value).length
-
   let size = 28
-
   if (length > 16) size = 18
   else if (length > 12) size = 22
   else if (length > 9) size = 24
-
   return (
-    <div style={card}>
-      <div style={cardTitle}>{title}</div>
-
-      <div
-        style={{
-          ...cardValue,
-          fontSize: size
-        }}
-      >
-        {value}
-      </div>
+    <div className="app-card">
+      <div className="app-card-title">{title}</div>
+      <div className="app-card-value" style={{ fontSize: size }}>{value}</div>
     </div>
   )
-}
-
-/* ================= STYLE ================= */
-
-const cardWrap = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-  gap: 20
-}
-
-const card = {
-  background: '#fff',
-  borderRadius: 16,
-  padding: 20,
-  boxShadow: '0 10px 25px rgba(0,0,0,0.05)'
-}
-
-const cardTitle = {
-  fontSize: 12,
-  textTransform: 'uppercase',
-  color: '#64748b',
-  marginBottom: 8,
-  fontWeight: 700
-}
-
-const cardValue = {
-  fontSize: 28,
-  fontWeight: 800,
-  color: '#0f172a'
-}
-
-const chartWrap = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-  gap: 20
-}
-
-const chartCard = {
-  background: '#fff',
-  borderRadius: 16,
-  padding: 20,
-  boxShadow: '0 10px 25px rgba(0,0,0,0.05)'
 }

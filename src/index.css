@@ -1,8 +1,49 @@
+/* ============================================================
+   CSS VARIABLES - LIGHT & DARK
+   ============================================================ */
+:root {
+  --bg: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-card-soft: #f1f5f9;
+  --bg-input: #ffffff;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --text-soft: #94a3b8;
+  --border: #e5e7eb;
+  --shadow: 0 10px 25px rgba(0,0,0,0.05);
+  --header-bg: #ffffff;
+  --header-border: #e5e7eb;
+  --btn-bg: #e5e7eb;
+  --btn-text: #0f172a;
+}
+
+[data-theme="dark"] {
+  --bg: #0f172a;
+  --bg-card: #1e293b;
+  --bg-card-soft: #273449;
+  --bg-input: #1e293b;
+  --text: #e2e8f0;
+  --text-muted: #b0bac7;
+  --text-soft: #8896a5;
+  --border: #334155;
+  --shadow: 0 10px 25px rgba(0,0,0,0.25);
+  --header-bg: #1e293b;
+  --header-border: #334155;
+  --btn-bg: #334155;
+  --btn-text: #e2e8f0;
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
 html, body {
   margin: 0;
   padding: 0;
   overflow-x: hidden;
   font-family: Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 * {
@@ -34,7 +75,6 @@ html, body {
   box-shadow: 8px 0 32px rgba(0,0,0,0.22);
 }
 
-/* === Brand === */
 .sb-brand {
   display: flex;
   align-items: center;
@@ -77,7 +117,6 @@ html, body {
   opacity: 1;
 }
 
-/* === Nav === */
 .sb-nav {
   flex: 1;
   padding: 10px 8px;
@@ -137,7 +176,6 @@ html, body {
   pointer-events: auto;
 }
 
-/* === Footer === */
 .sb-footer {
   padding: 10px 8px 14px;
   border-top: 1px solid rgba(255,255,255,0.06);
@@ -167,8 +205,6 @@ html, body {
 
 /* ============================================================
    MAIN CONTENT
-   - default       : margin 56px (sidebar collapsed)
-   - hover / pinned: margin 220px (sidebar expanded)
    ============================================================ */
 .main-content {
   margin-left: 56px;
@@ -177,7 +213,7 @@ html, body {
   transition: margin-left 0.22s ease;
   display: flex;
   flex-direction: column;
-  background: #f8fafc;
+  background: var(--bg);
 }
 
 body.sidebar-expanded .main-content,
@@ -186,10 +222,120 @@ body.sidebar-pinned .main-content {
 }
 
 /* ============================================================
+   HEADER
+   ============================================================ */
+.app-header {
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--header-border);
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--text);
+}
+
+.theme-toggle {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  transition: background 0.2s ease;
+}
+
+/* ============================================================
+   CARDS & CONTENT
+   ============================================================ */
+.app-card {
+  background: var(--bg-card);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.app-card-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.app-card-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+/* ============================================================
+   INPUTS & BUTTONS
+   ============================================================ */
+input, select, textarea {
+  background: var(--bg-input);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-family: inherit;
+  font-size: 14px;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+input::placeholder {
+  color: var(--text-soft);
+}
+
+button {
+  font-family: inherit;
+}
+
+/* ============================================================
    PROJECT GRID
    ============================================================ */
 .project-grid {
   grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+}
+
+/* ============================================================
+   PAGINATION
+   ============================================================ */
+.pagination {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+
+.pagination button {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination span {
+  font-size: 14px;
+  color: var(--text);
 }
 
 /* ============================================================
@@ -220,4 +366,26 @@ body.sidebar-pinned .main-content {
   body.sidebar-pinned .main-content {
     margin-left: 48px;
   }
+}
+
+/* === STATUS COLORS === */
+.status-danger  { color: #ef4444; font-weight: 600; }
+.status-warning { color: #f59e0b; font-weight: 600; }
+.status-safe    { color: #22c55e; font-weight: 600; }
+.status-done    { color: #60a5fa; font-weight: 600; }
+
+/* === TOMBOL HAPUS === */
+.btn-danger {
+  color: #ef4444;
+  border: 1px solid #ef4444;
+  background: transparent;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.btn-danger:hover {
+  background: rgba(239,68,68,0.15);
 }

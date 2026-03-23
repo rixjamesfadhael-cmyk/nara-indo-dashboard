@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { onAuthStateChanged, signOut } from 'firebase/auth'
+import { onAuthStateChanged } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import { auth, db } from './firebase'
 
@@ -18,17 +18,21 @@ export default function App() {
   const [role, setRole] = useState('viewer')
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState('dashboard')
+  const [autoEditProject, setAutoEditProject] = useState(false)
   const [focusProjectId, setFocusProjectId] = useState(null)
   const [theme, setTheme] = useState('light')
+
+  // Toggle data-theme di body setiap kali theme berubah
+  useEffect(() => {
+    document.body.setAttribute('data-theme', theme)
+  }, [theme])
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async currentUser => {
       if (currentUser) {
         setUser(currentUser)
-
         const ref = doc(db, 'users', currentUser.uid)
         const snap = await getDoc(ref)
-
         if (snap.exists()) {
           setRole(snap.data().role || 'viewer')
         } else {
@@ -37,10 +41,8 @@ export default function App() {
       } else {
         setUser(null)
       }
-
       setLoading(false)
     })
-
     return () => unsub()
   }, [])
 
@@ -51,28 +53,27 @@ export default function App() {
 
   switch (page) {
     case 'dashboard':
-  content = (
-    <Dashboard
-      goToProject={(projectId) => {
-        setFocusProjectId(null)          
-  setTimeout(() => {
-    setFocusProjectId(projectId)
-    setPage('projects')
-  }, 0)
-}}
-    />
-  )
-  break
-
-case 'projects':
-  content = (
-    <Proyek
-      role={role}
-      focusProjectId={focusProjectId}
-      clearFocus={() => setFocusProjectId(null)}
-    />
-  )
-  break
+      content = (
+        <Dashboard
+          goToProject={(projectId) => {
+            setFocusProjectId(null)
+            setTimeout(() => {
+              setFocusProjectId(projectId)
+              setPage('projects')
+            }, 0)
+          }}
+        />
+      )
+      break
+    case 'projects':
+      content = (
+        <Proyek
+          role={role}
+          autoEdit={autoEditProject}
+          clearAutoEdit={() => setAutoEditProject(false)}
+        />
+      )
+      break
     case 'history':
       content = <Histori />
       break
@@ -85,26 +86,18 @@ case 'projects':
 
   return (
     <Layout
-      theme={theme}
-      sidebar={
-        <Sidebar
-          page={page}
-          setPage={setPage}
-        />
-      }
+      sidebar={<Sidebar page={page} setPage={setPage} />}
       header={
         <Header
           title={`Aplikasi Manajemen Proyek (${role.toUpperCase()})`}
           theme={theme}
-          toggleTheme={() =>
-            setTheme(t => (t === 'light' ? 'dark' : 'light'))
-          }
+          toggleTheme={() => setTheme(t => (t === 'light' ? 'dark' : 'light'))}
         />
       }
     >
       <div key={`${page}-${focusProjectId || 'none'}`}>
-  {content}
-</div>
+        {content}
+      </div>
     </Layout>
   )
 }

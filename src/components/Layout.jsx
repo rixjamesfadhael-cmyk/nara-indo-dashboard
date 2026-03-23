@@ -12,8 +12,8 @@ export default function Layout({ sidebar, header, children }) {
 }
 
 const headerWrap = {
-  background: '#ffffff',
-  borderBottom: '1px solid #e5e7eb',
+  background: 'var(--header-bg)',
+  borderBottom: '1px solid var(--header-border)',
   padding: '12px 20px',
 }
 
