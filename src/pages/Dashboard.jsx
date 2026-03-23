@@ -43,15 +43,11 @@ export default function Dashboard({ goToProject }) {
   const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
 
   const chartOptions = {
-    plugins: {
-      legend: { labels: { color: labelColor, font: { size: 12 } } }
-    }
+    plugins: { legend: { labels: { color: labelColor, font: { size: 12 } } } }
   }
 
   const lineOptions = {
-    plugins: {
-      legend: { labels: { color: labelColor, font: { size: 12 } } }
-    },
+    plugins: { legend: { labels: { color: labelColor, font: { size: 12 } } } },
     scales: {
       x: { ticks: { color: labelColor }, grid: { color: gridColor } },
       y: { ticks: { color: labelColor }, grid: { color: gridColor } }
@@ -73,8 +69,7 @@ export default function Dashboard({ goToProject }) {
     datasets: [{
       label: 'Progress (%)',
       data: activeProjects.slice(0, 10).map(p => p.progress || 0),
-      borderColor: '#2563eb',
-      backgroundColor: 'rgba(37,99,235,0.2)',
+      borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.2)',
       tension: 0.4, fill: true
     }]
   }
@@ -100,8 +95,10 @@ export default function Dashboard({ goToProject }) {
           butuhPerhatian.map(p => (
             <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 14, marginBottom: 6 }}>
               <span style={{ color: 'var(--text)' }}>• {p.name} ({p.progress || 0}%)</span>
-              <button onClick={() => goToProject(p.id, { autoEdit: true })}
-                style={{ fontSize: 12, color: '#2563eb', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+              <button
+                onClick={() => goToProject(p.id)}
+                style={{ fontSize: 12, color: '#2563eb', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+              >
                 Lihat
               </button>
             </div>

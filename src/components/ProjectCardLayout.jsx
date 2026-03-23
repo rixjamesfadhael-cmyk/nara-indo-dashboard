@@ -9,19 +9,20 @@ import {
 } from '../services/payment.config'
 
 const DIVISION_CHIP = {
-  Konsultan:   { bg: '#dbeafe', color: '#1d4ed8' },
-  Konstruksi:  { bg: '#dcfce7', color: '#166534' },
-  Pengadaan:   { bg: '#ffedd5', color: '#9a3412' },
+  Konsultan:  { bg: '#dbeafe', color: '#1d4ed8' },
+  Konstruksi: { bg: '#dcfce7', color: '#166534' },
+  Pengadaan:  { bg: '#ffedd5', color: '#9a3412' },
 }
 
 export default function ProjectCardLayout({
-  p, role, expanded, setExpanded, drafts,
+  p, role, expanded, setExpanded, drafts, highlightId,
   editingKontrak, kontrakDraft, setEditingKontrak, setKontrakDraft,
   bukaTahapan, updateDraft, simpanTahapan, simpanKontrak,
   hitungStatusWaktu, calcProgress, isStepLocked,
   deleteDoc, doc, db
 }) {
   const editing = expanded === p.id && editingKontrak !== p.id
+  const isHighlighted = highlightId === p.id
   const [showDetail, setShowDetail] = useState(false)
   const workflow = editing ? drafts[p.id] || p.workflow || [] : p.workflow || []
   const status = hitungStatusWaktu(p)
@@ -53,6 +54,12 @@ export default function ProjectCardLayout({
     }
   }, [expanded, p.id])
 
+  useEffect(() => {
+    if (isHighlighted && cardRef.current) {
+      cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [isHighlighted])
+
   const btnBase = {
     padding: '4px 10px', borderRadius: 6,
     border: '1px solid var(--border)',
@@ -64,6 +71,7 @@ export default function ProjectCardLayout({
   return (
     <div
       ref={cardRef}
+      className={isHighlighted ? 'card-highlight' : undefined}
       style={{
         background: 'var(--bg-card)',
         padding: 16, marginBottom: 16, borderRadius: 12,
@@ -140,11 +148,9 @@ export default function ProjectCardLayout({
         </div>
         <div style={{ height: 6, background: 'var(--border)', borderRadius: 999, overflow: 'hidden' }}>
           <div style={{
-            height: '100%',
-            width: `${progress}%`,
+            height: '100%', width: `${progress}%`,
             background: progress === 100 ? '#22c55e' : progress >= 50 ? '#3b82f6' : '#f59e0b',
-            borderRadius: 999,
-            transition: 'width 0.4s ease'
+            borderRadius: 999, transition: 'width 0.4s ease'
           }} />
         </div>
       </div>
@@ -233,35 +239,35 @@ export default function ProjectCardLayout({
         <div style={{ marginTop: 12, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             <input style={{ gridColumn: '1 / -1' }}
-              placeholder={kontrakDraft.name ? undefined : 'Nama Proyek'}
+              placeholder={!kontrakDraft.name ? 'Nama Proyek' : undefined}
               value={kontrakDraft.name}
               onChange={e => setKontrakDraft({ ...kontrakDraft, name: e.target.value })} />
             <input
-              placeholder={kontrakDraft.nomorKontrak ? undefined : 'Nomor Kontrak'}
+              placeholder={!kontrakDraft.nomorKontrak ? 'Nomor Kontrak' : undefined}
               value={kontrakDraft.nomorKontrak}
               onChange={e => setKontrakDraft({ ...kontrakDraft, nomorKontrak: e.target.value.toUpperCase() })} />
             <input
-              placeholder={kontrakDraft.instansi ? undefined : 'Instansi'}
+              placeholder={!kontrakDraft.instansi ? 'Instansi' : undefined}
               value={kontrakDraft.instansi}
               onChange={e => setKontrakDraft({ ...kontrakDraft, instansi: e.target.value })} />
             <input
-              placeholder={kontrakDraft.lokasi ? undefined : 'Lokasi'}
+              placeholder={!kontrakDraft.lokasi ? 'Lokasi' : undefined}
               value={kontrakDraft.lokasi}
               onChange={e => setKontrakDraft({ ...kontrakDraft, lokasi: e.target.value })} />
             <input
-              placeholder={kontrakDraft.sumberDana ? undefined : 'Sumber Dana'}
+              placeholder={!kontrakDraft.sumberDana ? 'Sumber Dana' : undefined}
               value={kontrakDraft.sumberDana}
               onChange={e => setKontrakDraft({ ...kontrakDraft, sumberDana: e.target.value })} />
             <input
-              placeholder={kontrakDraft.pic ? undefined : 'PIC (Person In Charge)'}
+              placeholder={!kontrakDraft.pic ? 'PIC (Person In Charge)' : undefined}
               value={kontrakDraft.pic}
               onChange={e => setKontrakDraft({ ...kontrakDraft, pic: e.target.value })} />
             <input type="text" inputMode="numeric"
-              placeholder={kontrakDraft.nilaiAnggaran ? undefined : 'Nilai Anggaran'}
+              placeholder={!kontrakDraft.nilaiAnggaran ? 'Nilai Anggaran' : undefined}
               value={formatNumber(kontrakDraft.nilaiAnggaran)}
               onChange={e => setKontrakDraft({ ...kontrakDraft, nilaiAnggaran: parseNumber(e.target.value) })} />
             <input
-              placeholder={kontrakDraft.tahunAnggaran ? undefined : 'Tahun Anggaran'}
+              placeholder={!kontrakDraft.tahunAnggaran ? 'Tahun Anggaran' : undefined}
               value={kontrakDraft.tahunAnggaran}
               onChange={e => setKontrakDraft({ ...kontrakDraft, tahunAnggaran: e.target.value })} />
             <select style={{ gridColumn: '1 / -1' }}
@@ -272,11 +278,10 @@ export default function ProjectCardLayout({
             <input value={kontrakDraft.division} disabled placeholder="Divisi" />
             <input value={kontrakDraft.subDivision} disabled placeholder="Sub Divisi" />
             <input type="date"
-              placeholder={kontrakDraft.tanggalMulai ? undefined : 'Tanggal Mulai'}
               value={kontrakDraft.tanggalMulai}
               onChange={e => setKontrakDraft({ ...kontrakDraft, tanggalMulai: e.target.value })} />
             <input type="number"
-              placeholder={kontrakDraft.durasiHari ? undefined : 'Durasi (hari)'}
+              placeholder={!kontrakDraft.durasiHari ? 'Durasi (hari)' : undefined}
               value={kontrakDraft.durasiHari}
               onChange={e => setKontrakDraft({ ...kontrakDraft, durasiHari: e.target.value })} />
           </div>

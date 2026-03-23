@@ -66,14 +66,15 @@ export default function App() {
       )
       break
     case 'projects':
-      content = (
-        <Proyek
-          role={role}
-          autoEdit={autoEditProject}
-          clearAutoEdit={() => setAutoEditProject(false)}
-        />
-      )
-      break
+  content = (
+    <Proyek
+      role={role}
+      focusProjectId={focusProjectId}
+      clearAutoEdit={() => setAutoEditProject(false)}
+    />
+  )
+  break
+  
     case 'history':
       content = <Histori />
       break
