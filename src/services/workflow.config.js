@@ -26,13 +26,48 @@ export const WORKFLOW_CONFIG = {
 
   konstruksi: {
     label: 'Konstruksi',
-    steps: [
-      'Persiapan Pekerjaan',
-      'Pelaksanaan Pekerjaan',
-      'Pengendalian Proyek',
-      'Penyelesaian Pekerjaan',
-      'Serah Terima Pekerjaan'
-    ]
+    subs: {
+      jalan: {
+        label: 'Jalan',
+        steps: [
+          'Persiapan Pekerjaan',
+          'Pelaksanaan Pekerjaan',
+          'Pengendalian Proyek',
+          'Penyelesaian Pekerjaan',
+          'Serah Terima Pekerjaan'
+        ]
+      },
+      jembatan: {
+        label: 'Jembatan',
+        steps: [
+          'Persiapan Pekerjaan',
+          'Pelaksanaan Pekerjaan',
+          'Pengendalian Proyek',
+          'Penyelesaian Pekerjaan',
+          'Serah Terima Pekerjaan'
+        ]
+      },
+      bangunan: {
+        label: 'Bangunan',
+        steps: [
+          'Persiapan Pekerjaan',
+          'Pelaksanaan Pekerjaan',
+          'Pengendalian Proyek',
+          'Penyelesaian Pekerjaan',
+          'Serah Terima Pekerjaan'
+        ]
+      },
+      drainase: {
+        label: 'Drainase',
+        steps: [
+          'Persiapan Pekerjaan',
+          'Pelaksanaan Pekerjaan',
+          'Pengendalian Proyek',
+          'Penyelesaian Pekerjaan',
+          'Serah Terima Pekerjaan'
+        ]
+      }
+    }
   },
 
   pengadaan: {
