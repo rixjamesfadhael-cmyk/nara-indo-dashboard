@@ -60,7 +60,7 @@ export default function Sidebar({ page, setPage }) {
           transition: width var(--sb-transition), box-shadow var(--sb-transition);
           overflow: hidden;
           z-index: 200;
-          min-height: 100vh;
+          height: 100vh;
         }
 
         .sidebar:hover,

@@ -109,3 +109,17 @@ body.sidebar-pinned .main-content {
     margin-left: 48px;
   }
 }
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 48px;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .sb-footer {
+    position: sticky;
+    bottom: 0;
+    background: #151c28;
+  }
+}
