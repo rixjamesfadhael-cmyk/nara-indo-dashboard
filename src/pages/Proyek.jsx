@@ -17,7 +17,7 @@ import ProjectCard from '../components/ProjectCard'
 import EmptyState from '../components/EmptyState'
 import { logActivity } from '../services/activityLogger'
 
-export default function Proyek({ role, focusProjectId, clearFocus }) {
+export default function Proyek({ role, focusProjectId, clearFocus, autoAddProject, clearAutoAdd }) {
   const [projects, setProjects] = useState([])
   const [adding, setAdding] = useState(false)
   const [expanded, setExpanded] = useState(null)
@@ -36,6 +36,14 @@ export default function Proyek({ role, focusProjectId, clearFocus }) {
     pic: '', tanggalMulai: '', durasiHari: '',
     division: '', subDivision: '', paymentStatus: 'Belum Bayar'
   })
+
+  // Auto open add form from dashboard
+  useEffect(() => {
+    if (autoAddProject) {
+      setAdding(true)
+      if (clearAutoAdd) clearAutoAdd()
+    }
+  }, [autoAddProject])
 
   useEffect(() => {
     const q = query(collection(db, 'projects'), orderBy('createdAt', 'desc'))

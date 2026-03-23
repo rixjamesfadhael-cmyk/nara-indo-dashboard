@@ -18,11 +18,10 @@ export default function App() {
   const [role, setRole] = useState('viewer')
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState('dashboard')
-  const [autoEditProject, setAutoEditProject] = useState(false)
   const [focusProjectId, setFocusProjectId] = useState(null)
+  const [autoAddProject, setAutoAddProject] = useState(false)
   const [theme, setTheme] = useState('light')
 
-  // Toggle data-theme di body setiap kali theme berubah
   useEffect(() => {
     document.body.setAttribute('data-theme', theme)
   }, [theme])
@@ -62,19 +61,23 @@ export default function App() {
               setPage('projects')
             }, 0)
           }}
+          goToAddProject={() => {
+            setAutoAddProject(true)
+            setPage('projects')
+          }}
         />
       )
       break
     case 'projects':
-  content = (
-    <Proyek
-      role={role}
-      focusProjectId={focusProjectId}
-      clearAutoEdit={() => setAutoEditProject(false)}
-    />
-  )
-  break
-  
+      content = (
+        <Proyek
+          role={role}
+          focusProjectId={focusProjectId}
+          autoAddProject={autoAddProject}
+          clearAutoAdd={() => setAutoAddProject(false)}
+        />
+      )
+      break
     case 'history':
       content = <Histori />
       break
