@@ -14,6 +14,23 @@ const DIVISION_CHIP = {
   Pengadaan:  { bg: '#ffedd5', color: '#9a3412' },
 }
 
+const SUB_DIVISION_CHIP = {
+  Perencanaan: { bg: '#e0f2fe', color: '#075985' },
+  Pengawasan:  { bg: '#dbeafe', color: '#1e40af' },
+  Jalan:       { bg: '#dcfce7', color: '#166534' },
+  Jembatan:    { bg: '#ede9fe', color: '#5b21b6' },
+  Bangunan:    { bg: '#fee2e2', color: '#991b1b' },
+  Drainase:    { bg: '#fef3c7', color: '#92400e' },
+  Barang:      { bg: '#e0e7ff', color: '#3730a3' },
+  Jasa:        { bg: '#fce7f3', color: '#9d174d' },
+}
+
+const PAYMENT_CHIP = (status) => {
+  if (status === 'Pelunasan') return { bg: '#dcfce7', color: '#166534' }
+  if (status === 'DP' || status?.startsWith('Termin')) return { bg: '#dbeafe', color: '#1d4ed8' }
+  return { bg: '#fef3c7', color: '#92400e' }
+}
+
 export default function ProjectCardLayout({
   p, role, expanded, setExpanded, drafts, highlightId,
   editingKontrak, kontrakDraft, setEditingKontrak, setKontrakDraft,
@@ -47,6 +64,8 @@ export default function ProjectCardLayout({
     : 'status-safe'
 
   const divisionChip = DIVISION_CHIP[p.division] || { bg: '#e5e7eb', color: '#374151' }
+  const subDivisionChip = SUB_DIVISION_CHIP[p.subDivision] || { bg: '#e5e7eb', color: '#374151' }
+  const paymentChip = PAYMENT_CHIP(p.paymentStatus)
 
   useEffect(() => {
     if (expanded === p.id && cardRef.current) {
@@ -68,6 +87,13 @@ export default function ProjectCardLayout({
     cursor: 'pointer', fontFamily: 'inherit'
   }
 
+  const chip = (bg, color) => ({
+    fontSize: 11, fontWeight: 600,
+    padding: '2px 8px', borderRadius: 999,
+    background: bg, color: color,
+    display: 'inline-block'
+  })
+
   return (
     <div
       ref={cardRef}
@@ -85,18 +111,12 @@ export default function ProjectCardLayout({
       {/* ── Header ── */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8, gap: 8 }}>
         <div>
-          <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--text)', marginBottom: 4 }}>{p.name}</div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {p.division && (
-              <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, background: divisionChip.bg, color: divisionChip.color }}>
-                {p.division}
-              </span>
-            )}
-            {p.subDivision && (
-              <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, background: 'var(--bg-card-soft)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
-                {p.subDivision}
-              </span>
-            )}
+          <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--text)', marginBottom: 6 }}>{p.name}</div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+            {p.division && <span style={chip(divisionChip.bg, divisionChip.color)}>{p.division}</span>}
+            {p.subDivision && <span style={chip(subDivisionChip.bg, subDivisionChip.color)}>{p.subDivision}</span>}
+            {p.pic && <span style={chip('#e5e7eb', '#374151')}>PIC: {p.pic}</span>}
+            <span style={chip(paymentChip.bg, paymentChip.color)}>{p.paymentStatus || DEFAULT_PAYMENT_STATUS}</span>
           </div>
         </div>
         {needAttention && (
@@ -111,11 +131,6 @@ export default function ProjectCardLayout({
         {p.nomorKontrak && (
           <div style={{ color: 'var(--text-muted)' }}>
             No. Kontrak: <strong style={{ color: 'var(--text)' }}>{p.nomorKontrak}</strong>
-          </div>
-        )}
-        {p.pic && (
-          <div style={{ color: 'var(--text-muted)' }}>
-            PIC: <strong style={{ color: 'var(--text)' }}>{p.pic}</strong>
           </div>
         )}
         {p.instansi && (
@@ -155,11 +170,8 @@ export default function ProjectCardLayout({
         </div>
       </div>
 
-      {/* ── Status pembayaran + toggle detail ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
-        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-          Pembayaran: <strong style={{ color: 'var(--text)' }}>{p.paymentStatus || DEFAULT_PAYMENT_STATUS}</strong>
-        </div>
+      {/* ── Toggle detail ── */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
         <button
           style={{ fontSize: 12, color: '#3b82f6', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
           onClick={() => setShowDetail(v => !v)}
