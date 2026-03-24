@@ -65,6 +65,7 @@ export default function App() {
             setAutoAddProject(true)
             setPage('projects')
           }}
+          goToPage={(targetPage) => setPage(targetPage)}
         />
       )
       break

@@ -37,10 +37,11 @@ function useIsDark() {
   return isDark
 }
 
-export default function Dashboard({ goToProject, goToAddProject }) {
+export default function Dashboard({ goToProject, goToAddProject, goToPage }) {
   const [projects, setProjects] = useState([])
   const [exporting, setExporting] = useState(false)
   const dashboardRef = useRef(null)
+  const attentionRef = useRef(null)
   const isDark = useIsDark()
 
   useEffect(() => { return subscribeProjects(setProjects) }, [])
@@ -55,22 +56,16 @@ export default function Dashboard({ goToProject, goToAddProject }) {
   today.setHours(0, 0, 0, 0)
 
   const tepatWaktu = activeProjects.filter(p => {
-    const selesai = new Date(p.tanggalSelesai)
-    const sisa = Math.ceil((selesai - today) / (1000 * 60 * 60 * 24))
+    const sisa = Math.ceil((new Date(p.tanggalSelesai) - today) / (1000 * 60 * 60 * 24))
     return sisa >= 7
   }).length
 
   const berisiko = activeProjects.filter(p => {
-    const selesai = new Date(p.tanggalSelesai)
-    const sisa = Math.ceil((selesai - today) / (1000 * 60 * 60 * 24))
+    const sisa = Math.ceil((new Date(p.tanggalSelesai) - today) / (1000 * 60 * 60 * 24))
     return sisa >= 0 && sisa < 7
   }).length
 
-  const terlambat = activeProjects.filter(p => {
-    const selesai = new Date(p.tanggalSelesai)
-    return selesai < today
-  }).length
-
+  const terlambat = activeProjects.filter(p => new Date(p.tanggalSelesai) < today).length
   const totalAktif = activeProjects.length || 1
 
   const keterlambatanHari = activeProjects
@@ -96,9 +91,8 @@ export default function Dashboard({ goToProject, goToAddProject }) {
     datasets: [{ data: [safeProjects.length, dangerProjects.length, doneProjects.length], backgroundColor: ['#22c55e', '#ef4444', '#3b82f6'], borderWidth: 0, hoverOffset: 4 }]
   }
 
-  // Semua proyek aktif, bukan cuma 10
   const allActive = activeProjects
-  const BAR_ITEM_HEIGHT = 36 // px per bar
+  const BAR_ITEM_HEIGHT = 36
   const barChartHeight = Math.max(200, allActive.length * BAR_ITEM_HEIGHT)
 
   const barProgress = {
@@ -111,9 +105,7 @@ export default function Dashboard({ goToProject, goToAddProject }) {
         : (p.progress || 0) >= 50 ? '#3b82f6'
         : '#f59e0b'
       ),
-      borderRadius: 6,
-      borderSkipped: false,
-      barThickness: 18,
+      borderRadius: 6, borderSkipped: false, barThickness: 18,
     }]
   }
 
@@ -127,9 +119,7 @@ export default function Dashboard({ goToProject, goToAddProject }) {
   })
 
   const barOptions = {
-    indexAxis: 'y',
-    responsive: true,
-    maintainAspectRatio: false,
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
     plugins: {
       legend: { display: false },
       tooltip: {
@@ -144,13 +134,39 @@ export default function Dashboard({ goToProject, goToAddProject }) {
     }
   }
 
+  // ── Summary card actions ──
   const SUMMARY = [
-    { label: 'Proyek Aktif', value: activeProjects.length, sub: null, accent: '#3b82f6' },
-    { label: 'Total Nilai Aktif', value: singkat(totalNilaiAktif), sub: rupiah(totalNilaiAktif), accent: '#22c55e' },
-    { label: 'Proyek Arsip', value: archivedProjects.length, sub: null, accent: '#8b5cf6' },
-    { label: 'Rata-rata Progress', value: `${avgProgress}%`, sub: null, accent: '#f59e0b' },
-    { label: 'Perlu Perhatian', value: butuhPerhatian.length, sub: null, accent: '#ef4444' },
-    { label: 'Progress Terendah', value: lowestProgressProject ? `${lowestProgressProject.progress || 0}%` : '-', sub: lowestProgressProject?.name || null, accent: '#64748b' },
+    {
+      label: 'Proyek Aktif', value: activeProjects.length, sub: null, accent: '#3b82f6',
+      onClick: () => goToPage('projects'),
+      hint: 'Lihat semua proyek aktif'
+    },
+    {
+      label: 'Total Nilai Aktif', value: singkat(totalNilaiAktif), sub: rupiah(totalNilaiAktif), accent: '#22c55e',
+      onClick: null, hint: null
+    },
+    {
+      label: 'Proyek Arsip', value: archivedProjects.length, sub: null, accent: '#8b5cf6',
+      onClick: () => goToPage('archives'),
+      hint: 'Lihat arsip proyek'
+    },
+    {
+      label: 'Rata-rata Progress', value: `${avgProgress}%`, sub: null, accent: '#f59e0b',
+      onClick: null, hint: null
+    },
+    {
+      label: 'Perlu Perhatian', value: butuhPerhatian.length, sub: null, accent: '#ef4444',
+      onClick: () => attentionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+      hint: 'Lihat daftar perlu perhatian'
+    },
+    {
+      label: 'Progress Terendah',
+      value: lowestProgressProject ? `${lowestProgressProject.progress || 0}%` : '-',
+      sub: lowestProgressProject?.name || null,
+      accent: '#64748b',
+      onClick: lowestProgressProject ? () => goToProject(lowestProgressProject.id) : null,
+      hint: lowestProgressProject ? 'Lihat proyek ini' : null
+    },
   ]
 
   const handleExport = async (format) => {
@@ -163,18 +179,11 @@ export default function Dashboard({ goToProject, goToAddProject }) {
       })
       const imgData = canvas.toDataURL('image/png')
       const fileName = `Dashboard_Proyek_${new Date().toISOString().slice(0, 10)}`
-
       if (format === 'png') {
-        const a = document.createElement('a')
-        a.href = imgData
-        a.download = `${fileName}.png`
-        a.click()
+        const a = document.createElement('a'); a.href = imgData; a.download = `${fileName}.png`; a.click()
       } else if (format === 'jpeg') {
         const jpegData = canvas.toDataURL('image/jpeg', 0.92)
-        const a = document.createElement('a')
-        a.href = jpegData
-        a.download = `${fileName}.jpg`
-        a.click()
+        const a = document.createElement('a'); a.href = jpegData; a.download = `${fileName}.jpg`; a.click()
       } else if (format === 'pdf') {
         const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
         const imgWidth = 297
@@ -182,9 +191,7 @@ export default function Dashboard({ goToProject, goToAddProject }) {
         pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight)
         pdf.save(`${fileName}.pdf`)
       }
-    } catch (err) {
-      console.error('Export error:', err)
-    }
+    } catch (err) { console.error('Export error:', err) }
     setExporting(false)
   }
 
@@ -207,9 +214,7 @@ export default function Dashboard({ goToProject, goToAddProject }) {
             onClick={goToAddProject}
           >+ Tambah Proyek</button>
           <select
-            style={btnBase}
-            disabled={exporting}
-            defaultValue=""
+            style={btnBase} disabled={exporting} defaultValue=""
             onChange={e => { if (e.target.value) handleExport(e.target.value); e.target.value = '' }}
           >
             <option value="" disabled>{exporting ? 'Mengekspor...' : '⬇ Export'}</option>
@@ -220,16 +225,35 @@ export default function Dashboard({ goToProject, goToAddProject }) {
         </div>
       </div>
 
-      {/* Konten yang di-capture */}
       <div ref={dashboardRef} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
         {/* Summary Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
-          {SUMMARY.map(({ label, value, sub, accent }) => (
-            <div key={label} className="app-card" style={{ padding: '14px 16px', borderLeft: `3px solid ${accent}` }}>
-              <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 6, letterSpacing: '0.05em' }}>{label}</div>
+          {SUMMARY.map(({ label, value, sub, accent, onClick, hint }) => (
+            <div
+              key={label}
+              className="app-card"
+              onClick={onClick || undefined}
+              title={hint || undefined}
+              style={{
+                padding: '14px 16px',
+                borderLeft: `3px solid ${accent}`,
+                cursor: onClick ? 'pointer' : 'default',
+                transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+              }}
+              onMouseEnter={e => { if (onClick) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.1)' }}}
+              onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '' }}
+            >
+              <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 6, letterSpacing: '0.05em' }}>
+                {label}
+              </div>
               <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', lineHeight: 1.1 }}>{value}</div>
               {sub && <div style={{ fontSize: 11, color: 'var(--text-soft)', marginTop: 4, wordBreak: 'break-word' }}>{sub}</div>}
+              {onClick && (
+                <div style={{ fontSize: 10, color: accent, marginTop: 6, fontWeight: 600 }}>
+                  {hint} →
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -257,18 +281,20 @@ export default function Dashboard({ goToProject, goToAddProject }) {
             <div style={{ width: `${Math.round(terlambat / totalAktif * 100)}%`, background: '#ef4444', transition: 'width 0.4s ease' }} />
           </div>
           <div style={{ display: 'flex', gap: 16, marginTop: 6, fontSize: 11, color: 'var(--text-muted)' }}>
-            <span>🟢 Tepat Waktu</span>
-            <span>🟡 Berisiko</span>
-            <span>🔴 Terlambat</span>
+            <span>🟢 Tepat Waktu</span><span>🟡 Berisiko</span><span>🔴 Terlambat</span>
           </div>
         </div>
 
         {/* Perlu Perhatian + Deadline */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
-          <div className="app-card">
+
+          {/* ref untuk scroll target */}
+          <div ref={attentionRef} className="app-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>⚠️ Perlu Perhatian</h3>
-              <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 999, background: '#fef2f2', color: '#991b1b', fontWeight: 600 }}>{butuhPerhatian.length} proyek</span>
+              <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 999, background: '#fef2f2', color: '#991b1b', fontWeight: 600 }}>
+                {butuhPerhatian.length} proyek
+              </span>
             </div>
             {butuhPerhatian.length === 0 ? (
               <div style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '12px 0' }}>✅ Semua proyek dalam kondisi baik</div>
@@ -358,11 +384,8 @@ export default function Dashboard({ goToProject, goToAddProject }) {
             <div className="app-card" style={{ gridColumn: '1 / -1' }}>
               <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
                 Progress Proyek Aktif
-                <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--text-muted)', marginLeft: 8 }}>
-                  ({allActive.length} proyek)
-                </span>
+                <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--text-muted)', marginLeft: 8 }}>({allActive.length} proyek)</span>
               </h3>
-              {/* Scrollable wrapper — max 320px, scroll jika lebih */}
               <div style={{ maxHeight: 320, overflowY: 'auto', paddingRight: 4 }}>
                 <div style={{ height: barChartHeight, minHeight: 200 }}>
                   <Bar data={barProgress} options={barOptions} />
