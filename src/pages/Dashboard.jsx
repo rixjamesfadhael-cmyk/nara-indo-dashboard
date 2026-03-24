@@ -299,8 +299,10 @@ export default function Dashboard({ goToProject, goToAddProject, goToPage }) {
             {butuhPerhatian.length === 0 ? (
               <div style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '12px 0' }}>✅ Semua proyek dalam kondisi baik</div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {butuhPerhatian.map(p => (
+              <div 
+              className="subtle-scroll"
+              style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 280, overflowY: 'auto', paddingRight: 4 }}>
+  {butuhPerhatian.map(p => (
                   <div key={p.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{p.name}</span>
@@ -329,8 +331,10 @@ export default function Dashboard({ goToProject, goToAddProject, goToPage }) {
             {nearestDeadline.length === 0 ? (
               <div style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '12px 0' }}>Tidak ada deadline mendekat</div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {nearestDeadline.map(p => {
+              <div 
+              className="subtle-scroll"
+              style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 280, overflowY: 'auto', paddingRight: 4 }}>
+  {nearestDeadline.map(p => {
                   const selesai = new Date(p.tanggalSelesai)
                   const sisaHari = Math.ceil((selesai - today) / (1000 * 60 * 60 * 24))
                   const isLate = sisaHari < 0
@@ -386,7 +390,9 @@ export default function Dashboard({ goToProject, goToAddProject, goToPage }) {
                 Progress Proyek Aktif
                 <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--text-muted)', marginLeft: 8 }}>({allActive.length} proyek)</span>
               </h3>
-              <div style={{ maxHeight: 320, overflowY: 'auto', paddingRight: 4 }}>
+              <div 
+              className="subtle-scroll"
+              style={{ maxHeight: 320, overflowY: 'auto', paddingRight: 4 }}>
                 <div style={{ height: barChartHeight, minHeight: 200 }}>
                   <Bar data={barProgress} options={barOptions} />
                 </div>
