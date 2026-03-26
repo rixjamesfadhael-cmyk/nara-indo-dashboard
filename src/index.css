@@ -300,6 +300,42 @@ button {
   font-family: inherit;
 }
 
+/* Fix: <option> tidak bisa pakai CSS variable,
+   warna di-set hardcode sesuai nilai dark theme */
+[data-theme="dark"] select option {
+  background-color: #1e293b;
+  color: #e2e8f0;
+}
+
+/* ============================================================
+   ANGGARAN TOOLTIP
+   Muncul saat hover di atas field Nilai Anggaran
+   ============================================================ */
+.anggaran-tooltip {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: var(--bg-card);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.4;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+  z-index: 10;
+  white-space: normal;
+  pointer-events: none;
+}
+
+/* Tampilkan tooltip saat parent div di-hover */
+div:hover > .anggaran-tooltip {
+  display: block;
+}
+
 /* ============================================================
    PROJECT GRID
    ============================================================ */
