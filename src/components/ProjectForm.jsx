@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { formatNumber, parseNumber } from '../utils/currency'
 
 function terbilang(n) {
@@ -63,7 +64,7 @@ export default function ProjectForm({
 
   const keteranganAnggaran = terbilang(form.nilaiAnggaran)
 
-  return (
+  return createPortal(
     <>
       {/* Overlay */}
       <div
@@ -266,5 +267,6 @@ export default function ProjectForm({
 
       </div>
     </>
+    ,document.body
   )
 }
