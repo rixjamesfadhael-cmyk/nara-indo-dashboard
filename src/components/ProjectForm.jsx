@@ -50,8 +50,6 @@ export default function ProjectForm({
 }) {
   if (!adding) return null
 
-  // Hanya atur layout/spacing — warna diserahkan ke CSS global (input, select di index.css)
-  // agar light & dark mode otomatis terbaca tanpa konflik inline style
   const inputStyle = {
     width: '100%',
     padding: '9px 12px',
@@ -66,35 +64,39 @@ export default function ProjectForm({
 
   return createPortal(
     <>
-      {/* Overlay */}
+      {/* Overlay — pointer-events none supaya tidak block klik di modal */}
       <div
-        onClick={onCancel}
         style={{
           position: 'fixed', inset: 0,
           background: 'rgba(0,0,0,0.5)',
           backdropFilter: 'blur(4px)',
           WebkitBackdropFilter: 'blur(4px)',
-          zIndex: 300,
+          zIndex: 9998,
+          pointerEvents: 'auto',
         }}
+        onClick={onCancel}
       />
 
-      {/* Modal */}
-      <div style={{
-        position: 'fixed',
-        top: '50%', left: '50%',
-        transform: 'translate(-50%, -50%)',
-        zIndex: 301,
-        width: '100%',
-        maxWidth: 580,
-        maxHeight: '90vh',
-        overflowY: 'auto',
-        borderRadius: 20,
-        padding: '28px 28px 24px',
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border)',
-        boxShadow: 'var(--shadow)',
-      }}>
-
+      {/* Modal — z-index lebih tinggi dari overlay */}
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          position: 'fixed',
+          top: '50%', left: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 9999,
+          width: '100%',
+          maxWidth: 580,
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          borderRadius: 20,
+          padding: '28px 28px 24px',
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border)',
+          boxShadow: '0 24px 60px rgba(0,0,0,0.35)',
+          pointerEvents: 'auto',
+        }}
+      >
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
           <div>
@@ -102,13 +104,15 @@ export default function ProjectForm({
             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>Isi data proyek baru</div>
           </div>
           <button
+            type="button"
             onClick={onCancel}
             style={{
               background: 'var(--bg-card-soft)',
               border: '1px solid var(--border)',
               borderRadius: 8, width: 32, height: 32,
               cursor: 'pointer', color: 'var(--text)',
-              fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center'
+              fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
             }}
           >✕</button>
         </div>
@@ -116,13 +120,10 @@ export default function ProjectForm({
         {/* Form grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
 
-          {/* Nama Proyek — full width */}
-          <input
-            style={{ ...inputStyle, gridColumn: '1 / -1' }}
+          <input style={{ ...inputStyle, gridColumn: '1 / -1' }}
             placeholder="Nama Proyek *"
             value={form.name}
-            onChange={e => setForm({ ...form, name: e.target.value })}
-          />
+            onChange={e => setForm({ ...form, name: e.target.value })} />
 
           <input style={inputStyle}
             placeholder="No. Kontrak"
@@ -144,41 +145,28 @@ export default function ProjectForm({
             value={form.sumberDana}
             onChange={e => setForm({ ...form, sumberDana: e.target.value })} />
 
-          {/* PIC — kolom kiri */}
           <input style={inputStyle}
             placeholder="PIC (Person In Charge)"
             value={form.pic || ''}
             onChange={e => setForm({ ...form, pic: e.target.value })} />
 
-          {/* Nilai Anggaran — kolom kanan, sejajar PIC */}
-          {/* Tooltip muncul saat hover via title attribute (native browser) */}
-          <div style={{ position: 'relative' }} title="Nilai Anggaran (Rp)">
+          <div style={{ position: 'relative' }}>
             <input
-              style={{ ...inputStyle, width: '100%', paddingRight: 32 }}
+              style={{ ...inputStyle, paddingRight: 32 }}
               type="text"
               inputMode="numeric"
               placeholder="Nilai Anggaran (Rp)"
               value={formatNumber(form.nilaiAnggaran)}
               onChange={e => setForm({ ...form, nilaiAnggaran: parseNumber(e.target.value) })}
             />
-            {/* Ikon Rp kecil di dalam field sebagai label permanen */}
             <span style={{
-              position: 'absolute',
-              right: 10,
-              top: '50%',
+              position: 'absolute', right: 10, top: '50%',
               transform: 'translateY(-50%)',
-              fontSize: 11,
-              fontWeight: 700,
-              color: 'var(--text-soft)',
-              pointerEvents: 'none',
-              userSelect: 'none',
+              fontSize: 11, fontWeight: 700, color: 'var(--text-soft)',
+              pointerEvents: 'none', userSelect: 'none',
             }}>Rp</span>
-
-            {/* Tooltip terbilang — muncul saat ada nilai, posisi di bawah field */}
             {keteranganAnggaran && (
-              <div className="anggaran-tooltip">
-                💰 {keteranganAnggaran}
-              </div>
+              <div className="anggaran-tooltip">💰 {keteranganAnggaran}</div>
             )}
           </div>
 
@@ -243,6 +231,7 @@ export default function ProjectForm({
         {/* Footer */}
         <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'flex-end' }}>
           <button
+            type="button"
             onClick={onCancel}
             style={{
               padding: '9px 18px', borderRadius: 10,
@@ -253,6 +242,7 @@ export default function ProjectForm({
             }}
           >Batal</button>
           <button
+            type="button"
             onClick={simpanProyek}
             style={{
               padding: '9px 24px', borderRadius: 10,
@@ -266,7 +256,7 @@ export default function ProjectForm({
         </div>
 
       </div>
-    </>
-    ,document.body
+    </>,
+    document.body
   )
 }
