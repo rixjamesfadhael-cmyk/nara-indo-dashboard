@@ -98,7 +98,7 @@ export default function ProjectForm({
         }}
       >
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, position: 'relative', zIndex: 1 }}>
           <div>
             <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>Tambah Proyek</h3>
             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>Isi data proyek baru</div>
@@ -118,7 +118,7 @@ export default function ProjectForm({
         </div>
 
         {/* Form grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, position: 'relative', zIndex: 0 }}>
 
           <input style={{ ...inputStyle, gridColumn: '1 / -1' }}
             placeholder="Nama Proyek *"
@@ -229,7 +229,7 @@ export default function ProjectForm({
         </div>
 
         {/* Footer */}
-        <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'flex-end' }}>
+        <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'flex-end', position: 'relative', zIndex: 1 }}>
           <button
             type="button"
             onClick={onCancel}
