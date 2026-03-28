@@ -189,7 +189,7 @@ export default function ProjectForm({
             }}>Rp</span>
             {keteranganAnggaran && (
               <div style={{
-                display: 'none',
+                display: 'block',
                 position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0,
                 background: 'rgba(0,0,0,0.7)', color: '#fff',
                 borderRadius: 8, padding: '6px 10px',
@@ -227,7 +227,7 @@ export default function ProjectForm({
           )}
 
           <select
-            style={{ ...inputStyle, gridColumn: '1 / -1' }}
+            style={inputStyle}
             value={form.division}
             onChange={e => setForm({ ...form, division: e.target.value, subDivision: '' })}
           >
@@ -239,7 +239,7 @@ export default function ProjectForm({
 
           {form.division && WORKFLOW_CONFIG[form.division]?.subs && (
             <select
-              style={{ ...inputStyle, gridColumn: '1 / -1' }}
+              style={inputStyle}
               value={form.subDivision}
               onChange={e => setForm({ ...form, subDivision: e.target.value })}
             >

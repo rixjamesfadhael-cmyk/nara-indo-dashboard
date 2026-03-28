@@ -295,7 +295,8 @@ input, select, textarea {
 }
 
 input::placeholder {
-  color: var(--text-soft);
+  color: var(--text); 
+  opacity: 0.8;
 }
 
 button {
