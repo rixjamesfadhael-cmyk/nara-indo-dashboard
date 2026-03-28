@@ -415,6 +415,8 @@ button {
   gap: 10px;
   position: relative;
   z-index: 0;
+  overflow: hidden;
+  isolation: isolate;
 }
 
 .modal-grid input,
