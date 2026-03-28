@@ -184,6 +184,7 @@ export default function Proyek({ role, focusProjectId, clearFocus, autoAddProjec
           adding={adding} form={form} setForm={setForm}
           simpanProyek={simpanProyek} WORKFLOW_CONFIG={WORKFLOW_CONFIG}
           hitungTanggalSelesai={hitungTanggalSelesai}
+          onCancel={() => setAdding(false)}
         />
       )}
 

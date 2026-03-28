@@ -79,6 +79,7 @@ export default function ProjectForm({
       alignItems: 'center',
       justifyContent: 'center',
       padding: 16,
+      pointerEvents: 'none',
     }}>
       {/* Backdrop blur */}
       <div
@@ -86,6 +87,8 @@ export default function ProjectForm({
         style={{
           position: 'absolute',
           inset: 0,
+          zIndex: 0,
+          pointerEvents: 'auto',
           background: 'rgba(0,0,0,0.5)',
           backdropFilter: 'blur(6px)',
           WebkitBackdropFilter: 'blur(6px)',
@@ -97,7 +100,8 @@ export default function ProjectForm({
         onClick={e => e.stopPropagation()}
         style={{
           position: 'relative',
-          zIndex: 1,
+          zIndex: 2,
+          pointerEvents: 'auto',
           width: '100%',
           maxWidth: 560,
           maxHeight: '90vh',
