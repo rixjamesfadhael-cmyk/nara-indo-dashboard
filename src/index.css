@@ -15,6 +15,7 @@
   --header-border: #e5e7eb;
   --btn-bg: #e5e7eb;
   --btn-text: #0f172a;
+  --input-bg-glass: rgba(255, 255, 255, 0.329);
 }
 
 [data-theme="dark"] {
@@ -31,6 +32,7 @@
   --header-border: #334155;
   --btn-bg: #334155;
   --btn-text: #e2e8f0;
+  --input-bg-glass: rgba(255,255,255,0.06);
 }
 
 /* ============================================================
@@ -292,6 +294,22 @@ input, select, textarea {
   transition: background 0.2s ease, border-color 0.2s ease;
   box-sizing: border-box;
   max-width: 100%;
+}
+
+/* === FIX SELECT DARK MODE === */
+select {
+  background-color: var(--bg-input);
+  color: var(--text);
+}
+
+select option {
+  background-color: var(--bg-card);
+  color: var(--text);
+}
+
+select:focus {
+  border-color: #3b82f6;
+  outline: none;
 }
 
 input::placeholder {
