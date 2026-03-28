@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { formatNumber, parseNumber } from '../utils/currency'
 
 function terbilang(n) {
@@ -49,82 +50,127 @@ export default function ProjectForm({
 }) {
   if (!adding) return null
 
+  const modalRoot = document.getElementById('modal-root')
+  if (!modalRoot) return null
+
   const keteranganAnggaran = terbilang(form.nilaiAnggaran)
 
-  return (
-    <>
-      {/* Overlay — hanya visual, pointer-events: none di CSS */}
-      <div className="modal-overlay" />
+  const inputStyle = {
+    width: '100%',
+    padding: '9px 12px',
+    borderRadius: 8,
+    border: '1px solid rgba(255,255,255,0.2)',
+    background: 'rgba(255,255,255,0.1)',
+    color: 'inherit',
+    fontSize: 13,
+    fontFamily: 'inherit',
+    outline: 'none',
+    boxSizing: 'border-box',
+    backdropFilter: 'blur(4px)',
+    WebkitBackdropFilter: 'blur(4px)',
+  }
 
-      {/* Wrapper klik luar untuk tutup */}
+  return createPortal(
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      zIndex: 9999,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 16,
+    }}>
+      {/* Backdrop blur */}
       <div
         onClick={onCancel}
         style={{
-          position: 'fixed', inset: 0,
-          zIndex: 9998,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          position: 'absolute',
+          inset: 0,
+          background: 'rgba(0,0,0,0.5)',
+          backdropFilter: 'blur(6px)',
+          WebkitBackdropFilter: 'blur(6px)',
+        }}
+      />
+
+      {/* Modal glass */}
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          position: 'relative',
+          zIndex: 1,
+          width: '100%',
+          maxWidth: 560,
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          borderRadius: 20,
+          padding: '28px 28px 24px',
+          background: 'rgba(255,255,255,0.13)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          border: '1px solid rgba(255,255,255,0.25)',
+          boxShadow: '0 24px 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2)',
+          color: 'var(--text)',
         }}
       >
-      {/* Modal — stopPropagation agar klik di dalam tidak tutup */}
-      <div className="modal-box" onClick={e => e.stopPropagation()} style={{ position: 'relative', margin: 'auto' }}>
-
         {/* Header */}
-        <div className="modal-header">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
           <div>
-            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>
-              Tambah Proyek
-            </h3>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
-              Isi data proyek baru
-            </div>
+            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Tambah Proyek</h3>
+            <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>Isi data proyek baru</div>
           </div>
-          <button type="button" className="modal-close-btn" onClick={onCancel}>✕</button>
+          <button
+            type="button"
+            onClick={onCancel}
+            style={{
+              background: 'rgba(255,255,255,0.15)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              borderRadius: 8, width: 32, height: 32,
+              cursor: 'pointer', color: 'inherit',
+              fontSize: 16, display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >✕</button>
         </div>
 
         {/* Form */}
-        <div className="modal-grid">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
 
           <input
-            className="span-full"
+            style={{ ...inputStyle, gridColumn: '1 / -1' }}
             placeholder="Nama Proyek *"
             value={form.name}
             onChange={e => setForm({ ...form, name: e.target.value })}
           />
 
-          <input
+          <input style={inputStyle}
             placeholder="No. Kontrak"
             value={form.nomorKontrak || ''}
-            onChange={e => setForm({ ...form, nomorKontrak: e.target.value.toUpperCase() })}
-          />
+            onChange={e => setForm({ ...form, nomorKontrak: e.target.value.toUpperCase() })} />
 
-          <input
+          <input style={inputStyle}
             placeholder="Instansi"
             value={form.instansi}
-            onChange={e => setForm({ ...form, instansi: e.target.value })}
-          />
+            onChange={e => setForm({ ...form, instansi: e.target.value })} />
 
-          <input
+          <input style={inputStyle}
             placeholder="Lokasi"
             value={form.lokasi}
-            onChange={e => setForm({ ...form, lokasi: e.target.value })}
-          />
+            onChange={e => setForm({ ...form, lokasi: e.target.value })} />
 
-          <input
+          <input style={inputStyle}
             placeholder="Sumber Dana"
             value={form.sumberDana}
-            onChange={e => setForm({ ...form, sumberDana: e.target.value })}
-          />
+            onChange={e => setForm({ ...form, sumberDana: e.target.value })} />
 
-          <input
+          <input style={inputStyle}
             placeholder="PIC (Person In Charge)"
             value={form.pic || ''}
-            onChange={e => setForm({ ...form, pic: e.target.value })}
-          />
+            onChange={e => setForm({ ...form, pic: e.target.value })} />
 
-          {/* Nilai Anggaran dengan tooltip terbilang */}
-          <div className="anggaran-wrap" style={{ position: 'relative' }}>
+          <div style={{ position: 'relative' }}>
             <input
-              style={{ paddingRight: 32 }}
+              style={{ ...inputStyle, paddingRight: 32 }}
               type="text"
               inputMode="numeric"
               placeholder="Nilai Anggaran (Rp)"
@@ -134,43 +180,50 @@ export default function ProjectForm({
             <span style={{
               position: 'absolute', right: 10, top: '50%',
               transform: 'translateY(-50%)',
-              fontSize: 11, fontWeight: 700, color: 'var(--text-soft)',
+              fontSize: 11, fontWeight: 700, opacity: 0.5,
               pointerEvents: 'none', userSelect: 'none',
             }}>Rp</span>
             {keteranganAnggaran && (
-              <div className="anggaran-tooltip">💰 {keteranganAnggaran}</div>
+              <div style={{
+                display: 'none',
+                position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0,
+                background: 'rgba(0,0,0,0.7)', color: '#fff',
+                borderRadius: 8, padding: '6px 10px',
+                fontSize: 11, fontStyle: 'italic', zIndex: 10,
+                pointerEvents: 'none',
+              }} className="anggaran-tooltip">
+                💰 {keteranganAnggaran}
+              </div>
             )}
           </div>
 
-          <input
+          <input style={inputStyle}
             type="number"
             placeholder="Tahun Anggaran"
             value={form.tahunAnggaran}
-            onChange={e => setForm({ ...form, tahunAnggaran: e.target.value })}
-          />
+            onChange={e => setForm({ ...form, tahunAnggaran: e.target.value })} />
 
-          <input
+          <input style={inputStyle}
             type="date"
             value={form.tanggalMulai}
-            onChange={e => setForm({ ...form, tanggalMulai: e.target.value })}
-          />
+            onChange={e => setForm({ ...form, tanggalMulai: e.target.value })} />
 
-          <input
+          <input style={inputStyle}
             type="number"
             placeholder="Durasi (hari)"
             value={form.durasiHari}
-            onChange={e => setForm({ ...form, durasiHari: e.target.value })}
-          />
+            onChange={e => setForm({ ...form, durasiHari: e.target.value })} />
 
           {form.tanggalMulai && form.durasiHari && (
-            <div className="span-full" style={{ fontSize: 12, color: 'var(--text-muted)', padding: '2px 2px' }}>
-              📅 Selesai: <strong style={{ color: 'var(--text)' }}>
+            <div style={{ gridColumn: '1 / -1', fontSize: 12, opacity: 0.7, padding: '2px 2px' }}>
+              📅 Selesai: <strong style={{ opacity: 1 }}>
                 {hitungTanggalSelesai(form.tanggalMulai, form.durasiHari)}
               </strong>
             </div>
           )}
 
           <select
+            style={{ ...inputStyle, gridColumn: '1 / -1' }}
             value={form.division}
             onChange={e => setForm({ ...form, division: e.target.value, subDivision: '' })}
           >
@@ -180,8 +233,9 @@ export default function ProjectForm({
             ))}
           </select>
 
-          {form.division && WORKFLOW_CONFIG[form.division]?.subs ? (
+          {form.division && WORKFLOW_CONFIG[form.division]?.subs && (
             <select
+              style={{ ...inputStyle, gridColumn: '1 / -1' }}
               value={form.subDivision}
               onChange={e => setForm({ ...form, subDivision: e.target.value })}
             >
@@ -190,9 +244,10 @@ export default function ProjectForm({
                 <option key={k} value={k}>{v.label}</option>
               ))}
             </select>
-          ) : <div />}
+          )}
 
           <select
+            style={inputStyle}
             value={form.paymentStatus || 'Belum Bayar'}
             onChange={e => setForm({ ...form, paymentStatus: e.target.value })}
           >
@@ -207,16 +262,16 @@ export default function ProjectForm({
         </div>
 
         {/* Footer */}
-        <div className="modal-footer">
+        <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'flex-end' }}>
           <button
             type="button"
             onClick={onCancel}
             style={{
               padding: '9px 18px', borderRadius: 10,
-              border: '1px solid var(--border)',
-              background: 'var(--bg-card-soft)',
-              color: 'var(--text)', fontSize: 13,
-              cursor: 'pointer', fontFamily: 'inherit'
+              border: '1px solid rgba(255,255,255,0.2)',
+              background: 'rgba(255,255,255,0.1)',
+              color: 'inherit', fontSize: 13,
+              cursor: 'pointer', fontFamily: 'inherit',
             }}
           >Batal</button>
           <button
@@ -228,13 +283,13 @@ export default function ProjectForm({
               background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
               color: '#fff', fontSize: 13, fontWeight: 600,
               cursor: 'pointer', fontFamily: 'inherit',
-              boxShadow: '0 4px 14px rgba(59,130,246,0.4)'
+              boxShadow: '0 4px 14px rgba(59,130,246,0.4)',
             }}
           >Simpan Proyek</button>
         </div>
 
       </div>
-      </div>
-    </>
+    </div>,
+    modalRoot
   )
 }
