@@ -290,6 +290,8 @@ input, select, textarea {
   font-family: inherit;
   font-size: 14px;
   transition: background 0.2s ease, border-color 0.2s ease;
+  box-sizing: border-box;
+  max-width: 100%;
 }
 
 input::placeholder {
@@ -298,42 +300,6 @@ input::placeholder {
 
 button {
   font-family: inherit;
-}
-
-/* Fix: <option> tidak bisa pakai CSS variable,
-   warna di-set hardcode sesuai nilai dark theme */
-[data-theme="dark"] select option {
-  background-color: #1e293b;
-  color: #e2e8f0;
-}
-
-/* ============================================================
-   ANGGARAN TOOLTIP
-   Muncul saat hover di atas field Nilai Anggaran
-   ============================================================ */
-.anggaran-tooltip {
-  display: none;
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  right: 0;
-  background: var(--bg-card);
-  color: var(--text-muted);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 7px 10px;
-  font-size: 12px;
-  font-style: italic;
-  line-height: 1.4;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.12);
-  z-index: 10;
-  white-space: normal;
-  pointer-events: none;
-}
-
-/* Tampilkan tooltip saat parent div di-hover */
-div:hover > .anggaran-tooltip {
-  display: block;
 }
 
 /* ============================================================
@@ -404,6 +370,90 @@ div:hover > .anggaran-tooltip {
   }
 }
 
+/* ============================================================
+   MODAL FORM
+   ============================================================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 9998;
+}
+
+.modal-box {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+  width: 90%;
+  max-width: 580px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 20px;
+  padding: 28px 28px 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.35);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  position: relative;
+  z-index: 2;
+}
+
+.modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  position: relative;
+  z-index: 0;
+}
+
+.modal-grid input,
+.modal-grid select {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.modal-grid .span-full {
+  grid-column: 1 / -1;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  justify-content: flex-end;
+  position: relative;
+  z-index: 2;
+}
+
+.modal-close-btn {
+  background: var(--bg-card-soft);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 /* === STATUS COLORS === */
 .status-danger  { color: #ef4444; font-weight: 600; }
 .status-warning { color: #f59e0b; font-weight: 600; }
@@ -436,22 +486,4 @@ div:hover > .anggaran-tooltip {
 .card-highlight {
   border-color: #3b82f6 !important;
   animation: cardPulse 1s ease-out 3;
-}
-
-/* === SUBTLE SCROLLBAR === */
-.subtle-scroll::-webkit-scrollbar {
-  width: 4px;
-}
-
-.subtle-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.subtle-scroll::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 999px;
-}
-
-.subtle-scroll::-webkit-scrollbar-thumb:hover {
-  background: var(--text-soft);
 }

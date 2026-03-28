@@ -1,4 +1,3 @@
-import { createPortal } from 'react-dom'
 import { formatNumber, parseNumber } from '../utils/currency'
 
 function terbilang(n) {
@@ -50,109 +49,73 @@ export default function ProjectForm({
 }) {
   if (!adding) return null
 
-  const inputStyle = {
-    width: '100%',
-    padding: '9px 12px',
-    borderRadius: 8,
-    fontSize: 13,
-    fontFamily: 'inherit',
-    outline: 'none',
-    boxSizing: 'border-box',
-  }
-
   const keteranganAnggaran = terbilang(form.nilaiAnggaran)
 
-  return createPortal(
+  return (
     <>
-      {/* Overlay — pointer-events none supaya tidak block klik di modal */}
-      <div
-        style={{
-          position: 'fixed', inset: 0,
-          background: 'rgba(0,0,0,0.5)',
-          backdropFilter: 'blur(4px)',
-          WebkitBackdropFilter: 'blur(4px)',
-          zIndex: 9998,
-          pointerEvents: 'auto',
-        }}
-        onClick={onCancel}
-      />
+      {/* Overlay */}
+      <div className="modal-overlay" onClick={onCancel} />
 
-      {/* Modal — z-index lebih tinggi dari overlay */}
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          position: 'fixed',
-          top: '50%', left: '50%',
-          transform: 'translate(-50%, -50%)',
-          zIndex: 9999,
-          width: '100%',
-          maxWidth: 580,
-          maxHeight: '90vh',
-          overflowY: 'auto',
-          borderRadius: 20,
-          padding: '28px 28px 24px',
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border)',
-          boxShadow: '0 24px 60px rgba(0,0,0,0.35)',
-          pointerEvents: 'auto',
-        }}
-      >
+      {/* Modal */}
+      <div className="modal-box" onClick={e => e.stopPropagation()}>
+
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, position: 'relative', zIndex: 1 }}>
+        <div className="modal-header">
           <div>
-            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>Tambah Proyek</h3>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>Isi data proyek baru</div>
+            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>
+              Tambah Proyek
+            </h3>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+              Isi data proyek baru
+            </div>
           </div>
-          <button
-            type="button"
-            onClick={onCancel}
-            style={{
-              background: 'var(--bg-card-soft)',
-              border: '1px solid var(--border)',
-              borderRadius: 8, width: 32, height: 32,
-              cursor: 'pointer', color: 'var(--text)',
-              fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >✕</button>
+          <button type="button" className="modal-close-btn" onClick={onCancel}>✕</button>
         </div>
 
-        {/* Form grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, position: 'relative', zIndex: 0 }}>
+        {/* Form */}
+        <div className="modal-grid">
 
-          <input style={{ ...inputStyle, gridColumn: '1 / -1' }}
+          <input
+            className="span-full"
             placeholder="Nama Proyek *"
             value={form.name}
-            onChange={e => setForm({ ...form, name: e.target.value })} />
+            onChange={e => setForm({ ...form, name: e.target.value })}
+          />
 
-          <input style={inputStyle}
+          <input
             placeholder="No. Kontrak"
             value={form.nomorKontrak || ''}
-            onChange={e => setForm({ ...form, nomorKontrak: e.target.value.toUpperCase() })} />
+            onChange={e => setForm({ ...form, nomorKontrak: e.target.value.toUpperCase() })}
+          />
 
-          <input style={inputStyle}
+          <input
             placeholder="Instansi"
             value={form.instansi}
-            onChange={e => setForm({ ...form, instansi: e.target.value })} />
+            onChange={e => setForm({ ...form, instansi: e.target.value })}
+          />
 
-          <input style={inputStyle}
+          <input
             placeholder="Lokasi"
             value={form.lokasi}
-            onChange={e => setForm({ ...form, lokasi: e.target.value })} />
+            onChange={e => setForm({ ...form, lokasi: e.target.value })}
+          />
 
-          <input style={inputStyle}
+          <input
             placeholder="Sumber Dana"
             value={form.sumberDana}
-            onChange={e => setForm({ ...form, sumberDana: e.target.value })} />
+            onChange={e => setForm({ ...form, sumberDana: e.target.value })}
+          />
 
-          <input style={inputStyle}
+          <input
             placeholder="PIC (Person In Charge)"
             value={form.pic || ''}
-            onChange={e => setForm({ ...form, pic: e.target.value })} />
+            onChange={e => setForm({ ...form, pic: e.target.value })}
+          />
 
-          <div style={{ position: 'relative' }}>
+          {/* Nilai Anggaran dengan tooltip terbilang */}
+          <div className="anggaran-wrap" style={{ position: 'relative' }}>
             <input
-              style={{ ...inputStyle, paddingRight: 32 }}
+              style={{ paddingRight: 32 }}
               type="text"
               inputMode="numeric"
               placeholder="Nilai Anggaran (Rp)"
@@ -170,34 +133,38 @@ export default function ProjectForm({
             )}
           </div>
 
-          <input style={inputStyle}
+          <input
             type="number"
             placeholder="Tahun Anggaran"
             value={form.tahunAnggaran}
-            onChange={e => setForm({ ...form, tahunAnggaran: e.target.value })} />
+            onChange={e => setForm({ ...form, tahunAnggaran: e.target.value })}
+          />
 
-          <input style={inputStyle}
+          <input
             type="date"
             value={form.tanggalMulai}
-            onChange={e => setForm({ ...form, tanggalMulai: e.target.value })} />
+            onChange={e => setForm({ ...form, tanggalMulai: e.target.value })}
+          />
 
-          <input style={inputStyle}
+          <input
             type="number"
             placeholder="Durasi (hari)"
             value={form.durasiHari}
-            onChange={e => setForm({ ...form, durasiHari: e.target.value })} />
+            onChange={e => setForm({ ...form, durasiHari: e.target.value })}
+          />
 
           {form.tanggalMulai && form.durasiHari && (
-            <div style={{ gridColumn: '1 / -1', fontSize: 12, color: 'var(--text-muted)', padding: '2px 2px' }}>
+            <div className="span-full" style={{ fontSize: 12, color: 'var(--text-muted)', padding: '2px 2px' }}>
               📅 Selesai: <strong style={{ color: 'var(--text)' }}>
                 {hitungTanggalSelesai(form.tanggalMulai, form.durasiHari)}
               </strong>
             </div>
           )}
 
-          <select style={inputStyle}
+          <select
             value={form.division}
-            onChange={e => setForm({ ...form, division: e.target.value, subDivision: '' })}>
+            onChange={e => setForm({ ...form, division: e.target.value, subDivision: '' })}
+          >
             <option value="">-- Pilih Divisi --</option>
             {Object.entries(WORKFLOW_CONFIG).map(([k, v]) => (
               <option key={k} value={k}>{v.label}</option>
@@ -205,9 +172,10 @@ export default function ProjectForm({
           </select>
 
           {form.division && WORKFLOW_CONFIG[form.division]?.subs ? (
-            <select style={inputStyle}
+            <select
               value={form.subDivision}
-              onChange={e => setForm({ ...form, subDivision: e.target.value })}>
+              onChange={e => setForm({ ...form, subDivision: e.target.value })}
+            >
               <option value="">-- Pilih Sub Divisi --</option>
               {Object.entries(WORKFLOW_CONFIG[form.division].subs).map(([k, v]) => (
                 <option key={k} value={k}>{v.label}</option>
@@ -215,9 +183,10 @@ export default function ProjectForm({
             </select>
           ) : <div />}
 
-          <select style={inputStyle}
+          <select
             value={form.paymentStatus || 'Belum Bayar'}
-            onChange={e => setForm({ ...form, paymentStatus: e.target.value })}>
+            onChange={e => setForm({ ...form, paymentStatus: e.target.value })}
+          >
             <option value="Belum Bayar">Belum Bayar</option>
             <option value="DP">DP</option>
             <option value="Termin 1">Termin 1</option>
@@ -229,7 +198,7 @@ export default function ProjectForm({
         </div>
 
         {/* Footer */}
-        <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'flex-end', position: 'relative', zIndex: 1 }}>
+        <div className="modal-footer">
           <button
             type="button"
             onClick={onCancel}
@@ -256,7 +225,6 @@ export default function ProjectForm({
         </div>
 
       </div>
-    </>,
-    document.body
+    </>
   )
 }
