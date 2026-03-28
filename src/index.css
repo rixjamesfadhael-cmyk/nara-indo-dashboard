@@ -380,6 +380,7 @@ button {
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   z-index: 9998;
+  pointer-events: none;
 }
 
 .modal-box {

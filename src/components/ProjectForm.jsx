@@ -53,11 +53,20 @@ export default function ProjectForm({
 
   return (
     <>
-      {/* Overlay */}
-      <div className="modal-overlay" onClick={onCancel} />
+      {/* Overlay — hanya visual, pointer-events: none di CSS */}
+      <div className="modal-overlay" />
 
-      {/* Modal */}
-      <div className="modal-box" onClick={e => e.stopPropagation()}>
+      {/* Wrapper klik luar untuk tutup */}
+      <div
+        onClick={onCancel}
+        style={{
+          position: 'fixed', inset: 0,
+          zIndex: 9998,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}
+      >
+      {/* Modal — stopPropagation agar klik di dalam tidak tutup */}
+      <div className="modal-box" onClick={e => e.stopPropagation()} style={{ position: 'relative', margin: 'auto' }}>
 
         {/* Header */}
         <div className="modal-header">
@@ -224,6 +233,7 @@ export default function ProjectForm({
           >Simpan Proyek</button>
         </div>
 
+      </div>
       </div>
     </>
   )
